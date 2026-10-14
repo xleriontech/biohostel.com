@@ -53,28 +53,36 @@ async function ensureDir() {
 }
 
 async function readLocal<T>(name: string, seed: () => T[]): Promise<T[]> {
-  await ensureDir();
-  const file = path.join(DIR, `${name}.json`);
   try {
-    return JSON.parse(await fs.readFile(file, "utf8")) as T[];
+    await ensureDir();
+    const file = path.join(DIR, `${name}.json`);
+    try {
+      return JSON.parse(await fs.readFile(file, "utf8")) as T[];
+    } catch {
+      const initial = seed();
+      await fs.writeFile(file, JSON.stringify(initial, null, 2)).catch(() => null);
+      return initial;
+    }
   } catch {
-    const initial = seed();
-    await fs.writeFile(file, JSON.stringify(initial, null, 2));
-    return initial;
+    return seed();
   }
 }
 
 async function writeLocal<T>(name: string, rows: T[]): Promise<void> {
-  await ensureDir();
-  await fs.writeFile(path.join(DIR, `${name}.json`), JSON.stringify(rows, null, 2));
+  try {
+    await ensureDir();
+    await fs.writeFile(path.join(DIR, `${name}.json`), JSON.stringify(rows, null, 2));
+  } catch {
+    /* sin disco (Workers sin D1): la app sigue en modo lectura demo */
+  }
 }
 
 export async function readTable<T>(name: string, seed: () => T[]): Promise<T[]> {
   const db = getD1();
   if (db) {
     try {
-      const row = await db.prepare("SELECT v FROM kv_store WHERE k = ?").bind(name).first<{ v: string }>("v");
-      if (typeof row?.v === "string") return JSON.parse(row.v) as T[];
+      const val = await db.prepare("SELECT v FROM kv_store WHERE k = ?").bind(name).first<string>("v");
+      if (typeof val === "string") return JSON.parse(val) as T[];
       const initial = seed();
       await db.prepare("INSERT OR REPLACE INTO kv_store (k, v) VALUES (?, ?)").bind(name, JSON.stringify(initial)).run();
       return initial;
