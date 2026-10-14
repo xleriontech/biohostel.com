@@ -178,9 +178,41 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; background:
 }
 @media (max-width: 900px) {
   .nav { display: none; }
-  .header-in { flex-wrap: nowrap; }
   .searchcard { grid-template-columns: 1fr 1fr; }
   .grid3, .plans, .profiles, .packs { grid-template-columns: 1fr; }
   .ads { grid-template-columns: 1fr 1fr; }
   .kpis { grid-template-columns: 1fr 1fr; }
+}
+
+/* Móvil: todo a una columna, header compacto, tablas con scroll */
+.only-mobile { display: none; }
+@media (max-width: 640px) {
+  .page { width: calc(100% - 32px); }
+  .hide-mobile { display: none; }
+  .only-mobile { display: block; }
+  .topbar { font-size: 10px; white-space: normal; line-height: 1.5; }
+  .brand { font-size: 19px; }
+  .brand-mark { width: 34px; height: 34px; }
+  .hero { padding: 32px 0 22px; }
+  .hero h1 { font-size: 31px; letter-spacing: -.4px; }
+  .section { padding: 36px 0; }
+  .section h2 { font-size: 26px; }
+  .searchcard { grid-template-columns: 1fr; }
+  .searchcard .btn { width: 100%; justify-content: center; }
+  .tabs { gap: 6px; }
+  .pill { font-size: 12px; padding: 8px 13px; }
+  .limg { height: 210px; }
+  .loverlay h3 { font-size: 19px; }
+  .lmeta { flex-wrap: wrap; row-gap: 4px; }
+  .lfoot .row .btn { flex: 1; justify-content: center; }
+  .ads { grid-template-columns: 1fr; }
+  .kpis { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .kpi strong { font-size: 20px; }
+  table.tbl { display: block; overflow-x: auto; }
+  .modal-in { padding: 16px; }
+  .overlay { padding: 10px; }
+  .hactions .btn { padding: 10px 13px; font-size: 12px; }
+  .hactions { flex-wrap: wrap; justify-content: flex-end; row-gap: 6px; }
+  .udropdown { width: min(250px, calc(100vw - 40px)); }
+  .toast { left: 12px; right: 12px; max-width: none; }
 }

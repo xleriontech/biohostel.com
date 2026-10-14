@@ -256,8 +256,8 @@ export default function Site() {
             <a href="#publicidad">Proveedores</a>
           </nav>
           <div className="hactions">
-            <CurrencySelect />
-            <ThemeToggle />
+            <span className="hide-mobile"><CurrencySelect /></span>
+            <span className="hide-mobile"><ThemeToggle /></span>
             <div className="usermenu">
               <button className="btn btn-ghost" onClick={() => setMenuOpen((o) => !o)} aria-label="Menú" aria-expanded={menuOpen} style={{ borderRadius: 999, padding: "9px 12px" }}>
                 <Icon name="menu" size={18} /><Icon name="user" size={20} />
@@ -265,6 +265,12 @@ export default function Site() {
               {menuOpen && (
                 <div className="udropdown" onMouseLeave={() => setMenuOpen(false)}>
                   {user && <div className="uhead">Hola, <strong>{user.name.split(" ")[0]}</strong> · plan {user.plan}</div>}
+                  <div className="only-mobile" style={{ padding: "4px 8px" }}>
+                    <div className="row" style={{ gap: 8 }}>
+                      <CurrencySelect />
+                      <ThemeToggle />
+                    </div>
+                  </div>
                   <a href="#explorar" onClick={() => setMenuOpen(false)}><Icon name="search" size={16} /> Explorar</a>
                   <a href="#subarriendos" onClick={() => setMenuOpen(false)}><Icon name="home" size={16} /> Subarriendos</a>
                   <a href="#planes" onClick={() => setMenuOpen(false)}><Icon name="card" size={16} /> Planes</a>
@@ -291,7 +297,7 @@ export default function Site() {
 
       <section className="hero" id="top">
         <div className="page">
-          <p className="eyebrow">COMO BOOKING + AIRBNB, PERO VERDE 🌎</p>
+          <p className="eyebrow">COMO BOOKING + AIRBNB, PERO VERDE</p>
           <h1>Reserva hostels <em>y subarriendos</em> con IA que evita overbooking.</h1>
           <p className="muted">Antes de cobrar, la IA verifica tus fechas en Booking y Airbnb. Si está ocupado, te sugiere otro día o lugar. Si está libre, reserva y bloquea las otras plataformas.</p>
           <div className="searchcard">
