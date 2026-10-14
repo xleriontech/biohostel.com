@@ -1,0 +1,26 @@
+# Dependencias
+node_modules/
+
+# Build Next.js
+.next/
+out/
+build/
+
+# Datos locales (cuentas, sesiones, keys IA, RAG) — NO subir
+.data/
+
+# Uploads locales de prueba
+public/uploads/
+
+# Env
+.env
+.env*.local
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.log
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
