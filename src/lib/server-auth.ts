@@ -18,11 +18,11 @@ export async function hashPassword(password: string) {
   const enc = new TextEncoder();
   const key = await globalThis.crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]);
   const bits = await globalThis.crypto.subtle.deriveBits(
-    { name: "PBKDF2", salt: enc.encode(salt), iterations: 120000, hash: "SHA-256" },
+    { name: "PBKDF2", salt: enc.encode(salt), iterations: 100000, hash: "SHA-256" },
     key,
     256,
   );
-  return `pbkdf2$120000$${salt}$${hex(bits)}`;
+  return `pbkdf2$100000$${salt}$${hex(bits)}`;
 }
 
 function constantEqual(a: string, b: string): boolean {
@@ -38,7 +38,7 @@ async function verifyPbkdf2(password: string, stored: string): Promise<boolean> 
   try {
     const key = await globalThis.crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]);
     const bits = await globalThis.crypto.subtle.deriveBits(
-      { name: "PBKDF2", salt: enc.encode(salt), iterations: Number(iter) || 120000, hash: "SHA-256" },
+      { name: "PBKDF2", salt: enc.encode(salt), iterations: Number(iter) || 100000, hash: "SHA-256" },
       key,
       256,
     );
