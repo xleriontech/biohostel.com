@@ -2,12 +2,14 @@ import { NextResponse } from "next/server";
 import { store, uid } from "@/lib/store";
 import { createSession, currentUser, hashPassword, publicUser } from "@/lib/server-auth";
 
-const SETUP_KEY = process.env.ADMIN_SETUP_KEY || "BIOHOSTEL-MASTER-2026";
+import { getEnvVar } from "@/lib/storage";
+
+const SETUP_KEY = () => getEnvVar("ADMIN_SETUP_KEY", "BIOHOSTEL-MASTER-2026");
 
 // Crea el primer admin (o promueve un correo existente) con la clave de instalación.
 export async function POST(req: Request) {
   const { name, email, password, setupKey } = await req.json().catch(() => ({}));
-  if (setupKey !== SETUP_KEY) {
+  if (setupKey !== SETUP_KEY()) {
     return NextResponse.json({ error: "Clave de instalación incorrecta." }, { status: 403 });
   }
   if (!email?.trim()) {
@@ -29,7 +31,7 @@ export async function POST(req: Request) {
     id: uid("u"),
     name: String(name).trim().slice(0, 80),
     email: String(email).trim().toLowerCase(),
-    passwordHash: hashPassword(String(password)),
+    passwordHash: await hashPassword(String(password)),
     plan: "premium" as const,
     role: "admin" as const,
     favorites: [] as string[],

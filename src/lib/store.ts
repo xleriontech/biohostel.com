@@ -1,29 +1,5 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
 import { ADS, LISTINGS } from "./data";
-
-const DIR = path.join(process.cwd(), ".data");
-
-async function ensureDir() {
-  await fs.mkdir(DIR, { recursive: true });
-}
-
-async function readTable<T>(name: string, seed: () => T[]): Promise<T[]> {
-  await ensureDir();
-  const file = path.join(DIR, `${name}.json`);
-  try {
-    return JSON.parse(await fs.readFile(file, "utf8")) as T[];
-  } catch {
-    const initial = seed();
-    await fs.writeFile(file, JSON.stringify(initial, null, 2));
-    return initial;
-  }
-}
-
-async function writeTable<T>(name: string, rows: T[]) {
-  await ensureDir();
-  await fs.writeFile(path.join(DIR, `${name}.json`), JSON.stringify(rows, null, 2));
-}
+import { readTable, writeTable } from "./storage";
 
 export type StoredUser = {
   id: string;

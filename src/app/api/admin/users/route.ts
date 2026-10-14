@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   if (!u) return NextResponse.json({ error: "No existe." }, { status: 404 });
   const temp = "Bio-" + Math.random().toString(36).slice(2, 8).toUpperCase();
   const { hashPassword } = await import("@/lib/server-auth");
-  u.passwordHash = hashPassword(temp);
+  u.passwordHash = await hashPassword(temp);
   await store.saveUsers(users);
   return NextResponse.json({ tempPassword: temp });
 }

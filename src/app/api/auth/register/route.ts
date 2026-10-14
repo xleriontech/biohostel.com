@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     id: uid("u"),
     name: String(name).trim().slice(0, 80),
     email: String(email).trim().toLowerCase(),
-    passwordHash: hashPassword(String(password)),
+    passwordHash: await hashPassword(String(password)),
     plan: "gratuito" as const,
     role: "user" as const,
     favorites: [] as string[],

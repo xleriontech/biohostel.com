@@ -1,6 +1,11 @@
 # Dependencias
 node_modules/
 
+# Cloudflare
+.open-next/
+.dev.vars
+.wrangler/
+
 # Build Next.js
 .next/
 out/
