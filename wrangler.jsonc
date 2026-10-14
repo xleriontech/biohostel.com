@@ -27,5 +27,13 @@
       "binding": "UPLOADS",
       "bucket_name": "biohostel-uploads"
     }
-  ]
+  ],
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true,
+      "persist": true
+    }
+  }
 }

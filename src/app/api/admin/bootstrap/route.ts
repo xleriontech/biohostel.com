@@ -8,6 +8,7 @@ const SETUP_KEY = () => getEnvVar("ADMIN_SETUP_KEY", "BIOHOSTEL-MASTER-2026");
 
 // Crea el primer admin (o promueve un correo existente) con la clave de instalación.
 export async function POST(req: Request) {
+  try {
   const { name, email, password, setupKey } = await req.json().catch(() => ({}));
   if (setupKey !== SETUP_KEY()) {
     return NextResponse.json({ error: "Clave de instalación incorrecta." }, { status: 403 });
@@ -42,6 +43,9 @@ export async function POST(req: Request) {
   await store.saveUsers(users);
   await createSession(admin.id);
   return NextResponse.json({ user: publicUser(admin), promoted: false });
+  } catch (e) {
+    return NextResponse.json({ error: `Fallo interno: ${e instanceof Error ? e.message.slice(0, 200) : "?"}` }, { status: 500 });
+  }
 }
 
 export async function GET() {
