@@ -48,18 +48,55 @@ export async function POST(req: Request) {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     if (!res.headers.get("content-type")?.includes("text/html")) throw new Error("Esa URL no devolvió una página HTML.");
-    // Leer texto; res.text() usa la charset del header. Si el header viene vacío o wrong, 
-// caemos back a UTF-8 manual con normalización de caracteres comunes.
+    // 1. Leer texto RAW
     const rawText = await res.text();
-    // Normalización: algunas páginas vienen con Latin-1 corrupto (ej. Ã± en lugar de ñ)
-    // Reemplazos comunes de encoding roto
+    // 2. Extraer imágenes DEL HTML CRUPO ANTES de normalizar (para no romper src="...")
     let html = rawText;
+    const vistas = new Set<string>();
+    const ogImg = getMeta(html, "property", "og:image");
+    if (ogImg) {
+      const abs = absolutizar(ogImg, url);
+      if (abs) vistas.add(abs);
+    }
+    for (const m of html.matchAll(/<img[^>]*src=["']([^"']+)["'][^>]*>/gi)) {
+      const abs = absolutizar(m[1], url);
+      if (!abs) continue;
+      if (/\.(svg|ico)(\?|$)/i.test(abs) && !/logo/i.test(abs)) continue;
+      if (/pixel|tracking|analytics|1x1/i.test(abs)) continue;
+      vistas.add(abs);
+      if (vistas.size >= 24) break;
+    }
+    // 3. Normalización Latin-1→UTF-8 DESPUÉS de capturar imágenes
+    // (sino los replace de Ã± etc. pueden romper los src="..." ya capturados)
+    html = rawText;
     const latinToUtf8 = [
       ["Ã±", "ñ"], ["Ã¡", "á"], ["Ã©", "é"], ["Ã­", "í"], ["Ã³", "ó"], ["Ãº", "ú"],
       ["Ã", "Á"], ["Ã‰", "É"], ["Ãˆ", "Í"], ["Ã“", "Ó"], ["Ãš", "Ú"],
     ];
     for (const [broken, correct] of latinToUtf8) {
       html = html.replace(new RegExp(broken, "g"), correct);
+    }
+    // 4. Re-buscar imágenes DESPUÉS de normalizar (por si og-image o tags cambiaron)
+    const vistas2 = new Set<string>();
+    for (const m of html.matchAll(/<img[^>]*src=["']([^"']+)["'][^>]*>/gi)) {
+      const abs = absolutizar(m[1], url);
+      if (!abs) continue;
+      if (/\.(svg|ico)(\?|$)/i.test(abs) && !/logo/i.test(abs)) continue;
+      if (/pixel|tracking|analytics|1x1/i.test(abs)) continue;
+      vistas2.add(abs);
+      if (vistas2.size >= 24) break;
+    }
+    // Merge: unir ambas sets
+    for (const v of vistas2) { if (!vistas.has(v)) vistas.add(v); }
+    // Si aun así no hay imágenes, usar og:image o placeholder
+    if (vistas.size === 0) {
+      if (ogImg) {
+        const abs = absolutizar(ogImg, url);
+        if (abs) vistas.add(abs);
+      }
+      if (vistas.size === 0) {
+        vistas.add("https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80");
+      }
     }
   } catch (e) {
     return NextResponse.json(
