@@ -8,7 +8,7 @@ import { AuthModal } from "../auth-modal";
 import { Icon } from "../icons";
 import { useCurrency } from "@/lib/currency";
 
-type User = { id: string; name: string; email: string; plan: PlanId; favorites: string[]; follows: string[] };
+type User = { id: string; name: string; email: string; plan: PlanId; role?: string; favorites: string[]; follows: string[] };
 type Reservation = { id: string; code: string; listingTitle: string; guestName: string; checkIn: string; checkOut: string; guests: number; base: number; commission: number; total: number; status: string; aiReport: string; createdAt: string };
 type Lead = { id: string; tipo: string; nombre: string; email: string; mensaje: string; detalle: string; createdAt: string };
 type Channel = { id: string; plataforma: string; cuenta: string; ultima: string };
@@ -25,6 +25,7 @@ export default function Panel() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [channels, setChannels] = useState<Channel[]>([]);
   const [toast, setToast] = useState("");
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   // Importar
   const [importUrl, setImportUrl] = useState("https://tropicalbiohostel.pages.dev/");
@@ -90,6 +91,14 @@ export default function Panel() {
 
   function notify(m: string) { setToast(m); setTimeout(() => setToast(""), 3500); }
 
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
+    setUserMenuOpen(false);
+    setUser(null);
+    setAuthOpen(false);
+    notify("Sesión cerrada.");
+  }
+
   async function refresh() {
     const me = await fetch("/api/auth/me").then((r) => r.json()).catch(() => ({ user: null }));
     setUser(me.user ?? null);
@@ -147,9 +156,17 @@ export default function Panel() {
           font: data.style.font,
           rationale: data.style.rationale,
         });
+      } else {
+        setFTheme({
+          primary: "#1d4a2c",
+          accent: "#bef264",
+          preset: "selva",
+          font: "sans",
+          rationale: "No detecté colores en la web; usé el preset Selva por defecto. Ajusta abajo.",
+        });
       }
       notify(`Extraído: ${(data.imagenes as string[]).length} imágenes, amenidades y diseño.`);
-      setImportStep("design");
+      setImportStep("data");
     } catch { setImportError("Error de conexión."); } finally { setImporting(false); }
   }
 
@@ -228,7 +245,26 @@ export default function Panel() {
           <button className={`pill ${tab === "alojamientos" ? "on" : ""}`} onClick={() => setTab("alojamientos")}>Alojamientos ({mine.length})</button>
           <button className={`pill ${tab === "leads" ? "on" : ""}`} onClick={() => setTab("leads")}>Solicitudes ({leads.length})</button>
         </nav>
-        <div className="hactions"><CurrencySelect /><ThemeToggle /><span className="muted"><Icon name="user" size={14} /> {user.name} · {user.plan}</span><a className="btn btn-ghost" href="/"><Icon name="arrowLeft" size={15} /> Ver sitio</a></div>
+        <div className="hactions">
+          <CurrencySelect /><ThemeToggle />
+          <div className="usermenu">
+            <button className="btn btn-ghost" onClick={() => setUserMenuOpen((o) => !o)} aria-label="Menú de usuario" aria-expanded={userMenuOpen} style={{ borderRadius: 999, padding: "9px 12px" }}>
+              <Icon name="user" size={18} /> <span className="hide-mobile">{user.name.split(" ")[0]} · {user.plan}</span>
+            </button>
+            {userMenuOpen && (
+              <div className="udropdown" onMouseLeave={() => setUserMenuOpen(false)}>
+                <div className="uhead">Hola, <strong>{user.name.split(" ")[0]}</strong> · plan {user.plan}</div>
+                <a href="/" onClick={() => setUserMenuOpen(false)}><Icon name="arrowLeft" size={16} /> Ver sitio</a>
+                <button onClick={() => { setUserMenuOpen(false); setTab("resumen"); }}><Icon name="card" size={16} /> Mi resumen</button>
+                <button onClick={() => { setUserMenuOpen(false); setTab("alojamientos"); }}><Icon name="bed" size={16} /> Mis alojamientos</button>
+                {user.role === "admin" && <a href="/admin" onClick={() => setUserMenuOpen(false)}><Icon name="verified" size={16} /> Admin maestro</a>}
+                <hr />
+                <button onClick={logout}><Icon name="logout" size={16} /> Cerrar sesión</button>
+              </div>
+            )}
+          </div>
+          <a className="btn btn-ghost" href="/"><Icon name="arrowLeft" size={15} /> Ver sitio</a>
+        </div>
       </div></header>
 
       <div className="page section">

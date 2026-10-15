@@ -31,6 +31,7 @@ const AMENIDAD_KEYWORDS: Record<string, string[]> = {
 
 export async function POST(req: Request) {
   let url = "";
+  const vistas = new Set<string>();
   try {
     url = (await req.json())?.url ?? "";
   } catch {
@@ -50,9 +51,8 @@ export async function POST(req: Request) {
     if (!res.headers.get("content-type")?.includes("text/html")) throw new Error("Esa URL no devolvió una página HTML.");
     // 1. Leer texto RAW
     const rawText = await res.text();
-    // 2. Extraer imágenes DEL HTML CRUPO ANTES de normalizar (para no romper src="...")
-    let html = rawText;
-    const vistas = new Set<string>();
+    // 2. Extraer imágenes DEL HTML CRUDO ANTES de normalizar (para no romper src="...")
+    html = rawText;
     const ogImg = getMeta(html, "property", "og:image");
     if (ogImg) {
       const abs = absolutizar(ogImg, url);
@@ -86,9 +86,9 @@ export async function POST(req: Request) {
       vistas2.add(abs);
       if (vistas2.size >= 24) break;
     }
-    // Merge: unir ambas sets
+    // Merge: unir ambas sets (preferir originales, agregar normalizadas nuevas)
     for (const v of vistas2) { if (!vistas.has(v)) vistas.add(v); }
-    // Si aun así no hay imágenes, usar og:image o placeholder
+    // Si aun así no hay imágenes, usar og-image o placeholder
     if (vistas.size === 0) {
       if (ogImg) {
         const abs = absolutizar(ogImg, url);
@@ -121,27 +121,8 @@ export async function POST(req: Request) {
 
   const h1 = html.match(/<h1[^>]*>([\s\S]{1,160}?)<\/h1>/i)?.[1]?.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim() ?? "";
 
-  // Imágenes: og:image primero + todos los <img>, absolutizadas y deduplicadas
-  const vistas = new Set<string>();
-  const ogImg = getMeta(html, "property", "og:image");
-  if (ogImg) {
-    const abs = absolutizar(ogImg, url);
-    if (abs) vistas.add(abs);
-  }
-  for (const m of html.matchAll(/<img[^>]*src=["']([^"']+)["'][^>]*>/gi)) {
-    const abs = absolutizar(m[1], url);
-    if (!abs) continue;
-    if (/\.(svg|ico)(\?|$)/i.test(abs) && !/logo/i.test(abs)) continue;
-    if (/pixel|tracking|analytics|1x1/i.test(abs)) continue;
-    vistas.add(abs);
-    if (vistas.size >= 24) break;
-  }
-  const imagenes = [...vistas];
-  // Prioriza fotos reales (foto/, uploads, images) sobre logos
-  imagenes.sort((a, b) => {
-    const score = (s: string) => (/foto|upload|image|hostel|bungalo|caba|room|habitaci/i.test(s) ? 0 : 1);
-    return score(a) - score(b);
-  });
+  // Usar las imágenes capturadas en el bloque anterior (merge de before/after normalización)
+  const imagenes = vistas ? [...vistas] : [];
 
   const textoPlano = html
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
@@ -174,16 +155,6 @@ const VIBES: { preset: "selva" | "mar" | "colonial" | "urbano" | "minimal"; kws:
   { preset: "minimal", kws: /minimal|zen|bienestar|yoga|retiro|calma|contemplaci[oó]n/i, label: "bienestar minimal" },
 ];
 
-function esNeutro(hex: string): boolean {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  const mx = Math.max(r, g, b);
-  const mn = Math.min(r, g, b);
-  return mx - mn < 28 || (mx > 225 && mn > 215) || mx < 30;
-}
-
-// BioStyle: deduce paleta, tipografía y preset desde el contenido del cliente
 function extraerEstilo(html: string, textoPlano: string) {
   const themeColor = getMeta(html, "name", "theme-color") || getMeta(html, "name", "msapplication-TileColor");
   const css = [...html.matchAll(/<style[\s\S]*?>([\s\S]*?)<\/style>/gi)].map((m) => m[1]).join(" ");
@@ -214,4 +185,13 @@ function extraerEstilo(html: string, textoPlano: string) {
     font,
     rationale: `Detecté estilo ${vibe.label}: primario ${primary} (de tu web) + acento ${accent}, tipografía ${font === "serif" ? "con serifas clásicas" : "moderna sin serifas"}. Puedes ajustarlo abajo.`,
   };
+}
+
+function esNeutro(hex: string): boolean {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const mx = Math.max(r, g, b);
+  const mn = Math.min(r, g, b);
+  return mx - mn < 28 || (mx > 225 && mn > 215) || mx < 30;
 }
