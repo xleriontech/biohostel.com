@@ -31,6 +31,7 @@ export default function Panel() {
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState("");
   const [imp, setImp] = useState<ImportData | null>(null);
+  const [importStep, setImportStep] = useState<"data" | "design">("data");
   const [fTitulo, setFTitulo] = useState("");
   const [fCiudad, setFCiudad] = useState("");
   const [fDesc, setFDesc] = useState("");
@@ -38,6 +39,7 @@ export default function Panel() {
   const [fTipo, setFTipo] = useState<"reserva" | "subarriendo">("reserva");
   const [fHuespedes, setFHuespedes] = useState("2");
   const [selImgs, setSelImgs] = useState<string[]>([]);
+  const [fTheme, setFTheme] = useState<{ primary: string; accent: string; preset: "selva" | "mar" | "colonial" | "urbano" | "minimal"; font: "serif" | "sans"; rationale: string } | null>(null);
   // Canales
   const [chPlat, setChPlat] = useState("Booking");
   const [chCuenta, setChCuenta] = useState("");
@@ -137,7 +139,17 @@ export default function Panel() {
       setFCiudad(data.ciudad || "");
       setFDesc(data.descripcion || "");
       setSelImgs((data.imagenes as string[]).slice(0, 8));
-      notify(`Extraído: ${(data.imagenes as string[]).length} imágenes, amenidades y descripción.`);
+      if (data.style) {
+        setFTheme({
+          primary: data.style.primary,
+          accent: data.style.accent,
+          preset: data.style.preset,
+          font: data.style.font,
+          rationale: data.style.rationale,
+        });
+      }
+      notify(`Extraído: ${(data.imagenes as string[]).length} imágenes, amenidades y diseño.`);
+      setImportStep("design");
     } catch { setImportError("Error de conexión."); } finally { setImporting(false); }
   }
 
@@ -145,11 +157,12 @@ export default function Panel() {
     const res = await fetch("/api/listings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ titulo: fTitulo, ciudad: fCiudad, descripcion: fDesc, precioNoche: Number(fPrecio), tipo: fTipo, huespedes: Number(fHuespedes), imagenes: selImgs, amenidades: imp?.amenidades ?? [], fuente: imp?.fuente ?? "" }),
+      body: JSON.stringify({ titulo: fTitulo, ciudad: fCiudad, descripcion: fDesc, precioNoche: Number(fPrecio), tipo: fTipo, huespedes: Number(fHuespedes), imagenes: selImgs, amenidades: imp?.amenidades ?? [], fuente: imp?.fuente ?? "", theme: fTheme }),
     });
     const d = await res.json();
     if (!res.ok) { notify(d.error ?? "No se pudo publicar."); return; }
     setImp(null);
+    setImportStep("data");
     notify(`"${d.listing.titulo}" publicado. Ya está en el sitio.`);
     refresh();
   }
@@ -278,9 +291,9 @@ export default function Panel() {
             </div>
             {importError && <div className="aibox warn" style={{ marginTop: 10 }}>{importError}</div>}
 
-            {imp && (
+            {imp && importStep === "data" && (
               <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 16, padding: 18, marginTop: 14 }}>
-                <p className="eyebrow">DATOS EXTRAÍDOS · EDÍTALOS Y PUBLICA</p>
+                <p className="eyebrow">DATOS EXTRAÍDOS · EDÍTALOS Y CONTINÚA AL DISEÑO</p>
                 {imp.amenidades.length > 0 && <p className="muted">Detectadas: {imp.amenidades.join(" · ")}</p>}
                 <div className="field"><label>Título</label><input value={fTitulo} onChange={(e) => setFTitulo(e.target.value)} /></div>
                 <div className="row">
@@ -304,8 +317,34 @@ export default function Panel() {
                   })}
                 </div>
                 <div className="row" style={{ marginTop: 12 }}>
-                  <button className="btn btn-green" onClick={publicar}><Icon name="rocket" size={15} /> Publicar en biohostel.com</button>
+                  <button className="btn btn-green" onClick={() => setImportStep("design")}><Icon name="arrow" size={14} /> Siguiente: Diseño</button>
                   <button className="btn btn-ghost" onClick={() => setImp(null)}>Descartar</button>
+                </div>
+              </div>
+            )}
+
+            {imp && importStep === "design" && fTheme && (
+              <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 16, padding: 18, marginTop: 14 }}>
+                <p className="eyebrow">DISEÑO SUGERIDO POR IA · AJÚSTALO A TU GUSTO</p>
+                <p className="muted">{fTheme.rationale}</p>
+                <div className="row" style={{ marginTop: 12, gap: 12 }}>
+                  <div className="field" style={{ flex: 1 }}><label>Color principal</label><input type="color" value={fTheme.primary} onChange={(e) => setFTheme({ ...fTheme!, primary: e.target.value })} /></div>
+                  <div className="field" style={{ flex: 1 }}><label>Color acento</label><input type="color" value={fTheme.accent} onChange={(e) => setFTheme({ ...fTheme!, accent: e.target.value })} /></div>
+                  <div className="field"><label>Preset</label><select value={fTheme.preset} onChange={(e) => setFTheme({ ...fTheme!, preset: e.target.value as any })}><option value="selva">Selva</option><option value="mar">Mar</option><option value="colonial">Colonial</option><option value="urbano">Urbano</option><option value="minimal">Minimal</option></select></div>
+                  <div className="field"><label>Tipografía</label><select value={fTheme.font} onChange={(e) => setFTheme({ ...fTheme!, font: e.target.value as "serif" | "sans" })}><option value="serif">Serif (elegante)</option><option value="sans">Sans (moderna)</option></select></div>
+                </div>
+                <div className="field" style={{ marginTop: 12 }}><label>Justificación IA</label><textarea rows={2} value={fTheme.rationale} onChange={(e) => setFTheme({ ...fTheme!, rationale: e.target.value })} /></div>
+                <h4 style={{ marginTop: 16 }}>Vista previa</h4>
+                <div style={{ background: fTheme.primary, color: "#fff", borderRadius: 12, padding: 16, display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 60, height: 60, background: fTheme.accent, borderRadius: 8 }} />
+                  <div style={{ flex: 1 }}>
+                    <strong style={{ fontSize: 16 }}>{fTitulo || "Tu alojamiento"}</strong>
+                    <p style={{ fontSize: 13, opacity: 0.9 }}>{fCiudad} · {fTheme.preset}</p>
+                  </div>
+                </div>
+                <div className="row" style={{ marginTop: 12 }}>
+                  <button className="btn btn-ghost" onClick={() => setImportStep("data")}><Icon name="arrowLeft" size={14} /> Volver a datos</button>
+                  <button className="btn btn-green" onClick={publicar}><Icon name="rocket" size={15} /> Publicar en biohostel.com</button>
                 </div>
               </div>
             )}

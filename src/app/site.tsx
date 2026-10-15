@@ -31,8 +31,9 @@ export function TasaDot({ live }: { live: boolean }) {
 // Cabecera premium de la card: foto + degradado + badges + título protagonista.
 function CardImg({ listing: l, fav, onFav }: { listing: Listing; fav: boolean; onFav: () => void }) {
   const [err, setErr] = useState(false);
+  const theme = (l as { theme?: { primary?: string; accent?: string } }).theme;
   return (
-    <div className="limg">
+    <div className="limg" style={theme?.primary ? { background: `linear-gradient(135deg, ${theme.primary}, ${theme.accent || theme.primary} 60%, ${theme.accent || theme.primary})` } : {}}>
       {!err ? (
         /* eslint-disable-next-line @next/next/no-img-element */
         <img src={l.imagen} alt={l.titulo} loading="lazy" onError={() => setErr(true)} />
@@ -48,10 +49,10 @@ function CardImg({ listing: l, fav, onFav }: { listing: Listing; fav: boolean; o
         </div>
         <button className={`lheart ${fav ? "on" : ""}`} onClick={onFav} aria-label="Guardar en favoritos"><Icon name="heart" size={18} filled={fav} /></button>
       </div>
-      <div className="loverlay">
+      <div className="loverlay" style={theme?.accent ? { background: `linear-gradient(180deg, transparent, ${theme.accent}CC)` } : {}}>
         <span className="leyebrow">{l.categoria.toUpperCase()} · {l.ciudad.toUpperCase()}</span>
         <h3>{l.titulo}</h3>
-        <div className="lmeta"><span className="lrating"><Icon name="star" size={12} filled /> {l.rating}</span><span>{l.resenas} reseñas</span><span>·</span><span><Icon name="users" size={13} /> {l.huespedes}</span></div>
+        <div className="lmeta"><span className="lrating" style={theme?.accent ? { background: theme.accent, color: '#fff' } : {}}><Icon name="star" size={12} filled /> {l.rating}</span><span>{l.resenas} reseñas</span><span>·</span><span><Icon name="users" size={13} /> {l.huespedes}</span></div>
       </div>
     </div>
   );

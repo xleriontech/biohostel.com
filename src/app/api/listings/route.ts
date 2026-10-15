@@ -27,6 +27,17 @@ export async function POST(req: Request) {
   }
 
   const descripcion = me.plan === "gratuito" ? String(b.descripcion ?? "").slice(0, 300) : String(b.descripcion ?? "");
+  const { slugify } = await import("@/lib/store");
+  const all = await store.listings();
+  let slug = slugify(String(b.slug ?? titulo));
+  if (all.some((x) => x.slug === slug)) slug = `${slug}-${Date.now().toString(36).slice(-4)}`;
+  const theme = b.theme && typeof b.theme.primary === "string" ? {
+    primary: String(b.theme.primary).slice(0, 20),
+    accent: String(b.theme.accent ?? "#bef264").slice(0, 20),
+    preset: ["selva", "mar", "colonial", "urbano", "minimal"].includes(b.theme.preset) ? b.theme.preset : "selva",
+    font: b.theme.font === "serif" ? "serif" as const : "sans" as const,
+    rationale: String(b.theme.rationale ?? "").slice(0, 500),
+  } : undefined;
   const nuevo = {
     id: uid("lst"),
     titulo,
@@ -55,9 +66,10 @@ export async function POST(req: Request) {
     ownerId: me.id,
     active: true,
     featured: false,
+    slug,
+    theme,
     createdAt: new Date().toISOString(),
   };
-  const all = await store.listings();
   all.unshift(nuevo);
   await store.saveListings(all);
   // RAG: indexa el contenido para que la IA aprenda de esta propiedad

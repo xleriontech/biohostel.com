@@ -47,9 +47,20 @@ export async function POST(req: Request) {
       signal: AbortSignal.timeout(15000),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const ct = res.headers.get("content-type") ?? "";
-    if (!ct.includes("text/html")) throw new Error("Esa URL no devolvió una página HTML.");
-    html = await res.text();
+    if (!res.headers.get("content-type")?.includes("text/html")) throw new Error("Esa URL no devolvió una página HTML.");
+    // Leer texto; res.text() usa la charset del header. Si el header viene vacío o wrong, 
+// caemos back a UTF-8 manual con normalización de caracteres comunes.
+    const rawText = await res.text();
+    // Normalización: algunas páginas vienen con Latin-1 corrupto (ej. Ã± en lugar de ñ)
+    // Reemplazos comunes de encoding roto
+    let html = rawText;
+    const latinToUtf8 = [
+      ["Ã±", "ñ"], ["Ã¡", "á"], ["Ã©", "é"], ["Ã­", "í"], ["Ã³", "ó"], ["Ãº", "ú"],
+      ["Ã", "Á"], ["Ã‰", "É"], ["Ãˆ", "Í"], ["Ã“", "Ó"], ["Ãš", "Ú"],
+    ];
+    for (const [broken, correct] of latinToUtf8) {
+      html = html.replace(new RegExp(broken, "g"), correct);
+    }
   } catch (e) {
     return NextResponse.json(
       { error: `No pude leer esa web: ${e instanceof Error ? e.message : "error de red"}. Revisa la URL.` },
@@ -89,7 +100,7 @@ export async function POST(req: Request) {
     if (vistas.size >= 24) break;
   }
   const imagenes = [...vistas];
-  // Prioriza fotos reales (fotos/, uploads, images) sobre logos
+  // Prioriza fotos reales (foto/, uploads, images) sobre logos
   imagenes.sort((a, b) => {
     const score = (s: string) => (/foto|upload|image|hostel|bungalo|caba|room|habitaci/i.test(s) ? 0 : 1);
     return score(a) - score(b);
@@ -113,5 +124,57 @@ export async function POST(req: Request) {
     .match(/([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+),\s*([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)/);
   const ciudad = ciudadMatch?.[1] ?? "";
 
-  return NextResponse.json({ titulo, descripcion, h1, imagenes, amenidades, ciudad, fuente: url.trim() });
+  const style = extraerEstilo(html, textoPlano);
+
+  return NextResponse.json({ titulo, descripcion, h1, imagenes, amenidades, ciudad, fuente: url.trim(), style });
+}
+
+const VIBES: { preset: "selva" | "mar" | "colonial" | "urbano" | "minimal"; kws: RegExp; label: string }[] = [
+  { preset: "selva", kws: /bosque|selva|naturaleza|eco|finca|monta[ñn]a|caf[eé]|rural|sostenible/i, label: "eco-natural" },
+  { preset: "mar", kws: /playa|mar|caribe|oc[eé]ano|brisa|tropical|costa|isla/i, label: "costero" },
+  { preset: "colonial", kws: /colonial|patrimonio|hist[oó]rico|casco antiguo|tradici[oó]n|artesanal/i, label: "colonial" },
+  { preset: "urbano", kws: /cowork|n[oó]mada digital|ciudad|urbano|moderno|dise[ñn]o|boutique/i, label: "urbano" },
+  { preset: "minimal", kws: /minimal|zen|bienestar|yoga|retiro|calma|contemplaci[oó]n/i, label: "bienestar minimal" },
+];
+
+function esNeutro(hex: string): boolean {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const mx = Math.max(r, g, b);
+  const mn = Math.min(r, g, b);
+  return mx - mn < 28 || (mx > 225 && mn > 215) || mx < 30;
+}
+
+// BioStyle: deduce paleta, tipografía y preset desde el contenido del cliente
+function extraerEstilo(html: string, textoPlano: string) {
+  const themeColor = getMeta(html, "name", "theme-color") || getMeta(html, "name", "msapplication-TileColor");
+  const css = [...html.matchAll(/<style[\s\S]*?>([\s\S]*?)<\/style>/gi)].map((m) => m[1]).join(" ");
+  const inline = [...html.matchAll(/style=["']([^"']*)["']/gi)].map((m) => m[1]).join(" ");
+  const freq = new Map<string, number>();
+  for (const m of `${css} ${inline}`.matchAll(/#([0-9a-fA-F]{6})\b/g)) {
+    const hex = `#${m[1].toLowerCase()}`;
+    if (!esNeutro(hex)) freq.set(hex, (freq.get(hex) ?? 0) + 1);
+  }
+  const ranked = [...freq.entries()].sort((a, b) => b[1] - a[1]).map(([h]) => h);
+  const fonts = `${css} ${inline}`.toLowerCase();
+  const font: "serif" | "sans" = /georgia|playfair|merriweather|garamond|times|serif/.test(fonts) ? "serif" : "sans";
+  const vibe = VIBES.find((v) => v.kws.test(textoPlano)) ?? { preset: "selva" as const, label: "eco-natural" };
+  const defaults: Record<string, [string, string]> = {
+    selva: ["#1d4a2c", "#bef264"],
+    mar: ["#0e7490", "#fef3c7"],
+    colonial: ["#92400e", "#fcd34d"],
+    urbano: ["#1e3a8a", "#93c5fd"],
+    minimal: ["#3f3f46", "#e4e4e7"],
+  };
+  const [dPrimary, dAccent] = defaults[vibe.preset];
+  const primary = /^#[0-9a-f]{6}$/.test(themeColor) && !esNeutro(themeColor.toLowerCase()) ? themeColor : ranked[0] ?? dPrimary;
+  const accent = ranked.find((h) => h !== primary) ?? dAccent;
+  return {
+    primary,
+    accent,
+    preset: vibe.preset,
+    font,
+    rationale: `Detecté estilo ${vibe.label}: primario ${primary} (de tu web) + acento ${accent}, tipografía ${font === "serif" ? "con serifas clásicas" : "moderna sin serifas"}. Puedes ajustarlo abajo.`,
+  };
 }

@@ -72,6 +72,14 @@ export const PLANS: Plan[] = [
   },
 ];
 
+export type ListingTheme = {
+  primary: string;
+  accent: string;
+  preset: "selva" | "mar" | "colonial" | "urbano" | "minimal";
+  font: "serif" | "sans";
+  rationale: string;
+};
+
 export type Listing = {
   id: string;
   titulo: string;
@@ -91,6 +99,7 @@ export type Listing = {
   anfitrion: { nombre: string; plan: PlanId; verificado: boolean; avatar: string; seguidores: number };
   fechasOcupadasBooking: string[];
   fechasOcupadasAirbnb: string[];
+  theme?: ListingTheme;
 };
 
 // Catálogo demo 100% Colombia · precios en COP
@@ -118,6 +127,7 @@ export const LISTINGS: Listing[] = [
     anfitrion: { nombre: "Tropical Biohostel", plan: "premium", verificado: true, avatar: "TB", seguidores: 15200 },
     fechasOcupadasBooking: ["2026-10-20", "2026-10-21", "2026-11-02"],
     fechasOcupadasAirbnb: ["2026-10-25", "2026-10-26"],
+    theme: { primary: "#1d4a2c", accent: "#bef264", preset: "selva", font: "sans", rationale: "Eco-natural: verde selva profundo con acento lima, sin serifas modernas" },
   },
   {
     id: "bio-bogota-02",
@@ -141,6 +151,7 @@ export const LISTINGS: Listing[] = [
     anfitrion: { nombre: "Lucía Méndez", plan: "premium", verificado: true, avatar: "LM", seguidores: 8900 },
     fechasOcupadasBooking: [],
     fechasOcupadasAirbnb: ["2026-11-01", "2026-11-30"],
+    theme: { primary: "#1e3a8a", accent: "#93c5fd", preset: "urbano", font: "sans", rationale: "Urbano moderno: azul nocturno con acento celeste, sans-serif geométrica" },
   },
   {
     id: "bio-tayrona-03",
@@ -163,6 +174,7 @@ export const LISTINGS: Listing[] = [
     anfitrion: { nombre: "Selva Viva Tayrona", plan: "premium", verificado: true, avatar: "SV", seguidores: 12400 },
     fechasOcupadasBooking: ["2026-10-18", "2026-10-19"],
     fechasOcupadasAirbnb: [],
+    theme: { primary: "#0e7490", accent: "#fef3c7", preset: "mar", font: "sans", rationale: "Costero: azul oceánico profundo con acento arena dorada, sans-serif limpia" },
   },
   {
     id: "bio-medellin-04",
@@ -182,6 +194,7 @@ export const LISTINGS: Listing[] = [
     anfitrion: { nombre: "Host Paisa", plan: "gratuito", verificado: false, avatar: "HP", seguidores: 340 },
     fechasOcupadasBooking: [],
     fechasOcupadasAirbnb: [],
+    theme: { primary: "#3f3f46", accent: "#e4e4e7", preset: "minimal", font: "sans", rationale: "Minimalista: gris neutro con acento plata, sans-serif limpia y funcional" },
   },
   {
     id: "bio-cartagena-05",
@@ -202,6 +215,7 @@ export const LISTINGS: Listing[] = [
     anfitrion: { nombre: "Andrés Ruiz", plan: "corporativo", verificado: true, avatar: "AR", seguidores: 1200 },
     fechasOcupadasBooking: ["2026-10-28"],
     fechasOcupadasAirbnb: ["2026-10-28", "2026-10-29"],
+    theme: { primary: "#92400e", accent: "#fcd34d", preset: "colonial", font: "serif", rationale: "Colonial: dorado ámbar con acento mostaza, serif elegante para evocar historia" },
   },
   {
     id: "bio-salento-06",
@@ -221,6 +235,7 @@ export const LISTINGS: Listing[] = [
     anfitrion: { nombre: "Casa Cocora", plan: "gratuito", verificado: true, avatar: "CC", seguidores: 6700 },
     fechasOcupadasBooking: [],
     fechasOcupadasAirbnb: [],
+    theme: { primary: "#1d4a2c", accent: "#bef264", preset: "selva", font: "sans", rationale: "Eco-natural: verde selva con acento lima, sans-serif fresca para viajeros" },
   },
 ];
 

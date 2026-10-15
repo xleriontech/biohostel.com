@@ -26,6 +26,7 @@ export function docText(l: {
   politicas: string;
   precioNoche: number;
   huespedes: number;
+  theme?: { primary: string; accent: string; preset: string; font: string; rationale: string };
 }): string {
   return [
     `Título: ${l.titulo}`,
@@ -35,7 +36,8 @@ export function docText(l: {
     `Descripción: ${l.descripcion}`,
     `Amenidades: ${l.amenidades.join(", ")}`,
     `Políticas: ${l.politicas}`,
-  ].join("\n");
+    l.theme ? `Diseño del sitio: estilo ${l.theme.preset}, colores ${l.theme.primary} y ${l.theme.accent}, tipografía ${l.theme.font}. ${l.theme.rationale}` : "",
+  ].filter(Boolean).join("\n");
 }
 
 function tf(tokens: string[]): Map<string, number> {
@@ -99,7 +101,7 @@ function bestSnippet(text: string, qTokens: string[]): string {
   return best.trim().slice(0, 280);
 }
 
-export async function indexListing(l: { id: string; titulo: string; descripcion: string; ciudad: string; categoria: string; amenidades: string[]; politicas: string; precioNoche: number; huespedes: number }) {
+export async function indexListing(l: { id: string; titulo: string; descripcion: string; ciudad: string; categoria: string; amenidades: string[]; politicas: string; precioNoche: number; huespedes: number; theme?: { primary: string; accent: string; preset: string; font: string; rationale: string } }) {
   const docs = await store.ragDocs();
   const text = docText(l);
   const i = docs.findIndex((d) => d.listingId === l.id);

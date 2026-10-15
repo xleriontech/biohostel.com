@@ -16,12 +16,32 @@ export type StoredUser = {
 
 export type StoredSession = { token: string; userId: string; expiresAt: string };
 
+export type ListingTheme = {
+  primary: string;
+  accent: string;
+  preset: "selva" | "mar" | "colonial" | "urbano" | "minimal";
+  font: "serif" | "sans";
+  rationale: string;
+};
+
 export type StoredListing = (typeof LISTINGS)[number] & {
   ownerId: string;
   active: boolean;
   featured: boolean;
+  slug: string;
+  theme?: ListingTheme;
   createdAt: string;
 };
+
+export function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60) || "alojamiento";
+}
 
 export type StoredReservation = {
   id: string;
@@ -73,7 +93,7 @@ export type RagDoc = { id: string; listingId: string; title: string; text: strin
 
 // Convierte los demos de data.ts al formato persistente (dueño "demo")
 function seedListings(): StoredListing[] {
-  return LISTINGS.map((l) => ({ ...l, ownerId: "demo", active: true, featured: false, createdAt: new Date().toISOString() }));
+  return LISTINGS.map((l) => ({ ...l, ownerId: "demo", active: true, featured: false, slug: slugify(l.titulo), createdAt: new Date().toISOString() }));
 }
 
 export const store: {
