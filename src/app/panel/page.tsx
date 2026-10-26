@@ -10,7 +10,7 @@ import { Icon } from "../icons";
 import { useCurrency } from "@/lib/currency";
 
 type User = { id: string; name: string; email: string; plan: PlanId; role?: string; favorites: string[]; follows: string[] };
-type Reservation = { id: string; code: string; listingTitle: string; guestName: string; checkIn: string; checkOut: string; guests: number; base: number; commission: number; total: number; status: string; aiReport: string; createdAt: string };
+type Reservation = { id: string; code: string; listingTitle: string; guestName: string; checkIn: string; checkOut: string; guests: number; base: number; commission: number; extrasTotal?: number; total: number; status: string; aiReport: string; createdAt: string };
 type Lead = { id: string; tipo: string; nombre: string; email: string; mensaje: string; detalle: string; createdAt: string };
 type Channel = { id: string; plataforma: string; cuenta: string; ultima: string };
 type ImportData = { titulo: string; descripcion: string; h1: string; imagenes: string[]; amenidades: string[]; ciudad: string; fuente: string };
@@ -309,7 +309,7 @@ export default function Panel() {
             {received.length === 0 ? <p className="muted">Aún no recibes reservas. Publica y comparte tu enlace.</p> : (
               <table className="tbl"><thead><tr><th>CÓDIGO</th><th>HUÉSPED</th><th>ALOJAMIENTO</th><th>FECHAS</th><th>TOTAL</th><th>ESTADO</th><th></th></tr></thead>
                 <tbody>{received.map((r) => (
-                  <tr key={r.id}><td><strong>{r.code}</strong></td><td>{r.guestName}</td><td>{r.listingTitle}</td><td>{r.checkIn} → {r.checkOut}</td><td>{fmt(r.total)} <small className="muted">(com. {fmt(r.commission)})</small></td>
+                  <tr key={r.id}><td><strong>{r.code}</strong></td><td>{r.guestName}</td><td>{r.listingTitle}</td><td>{r.checkIn} → {r.checkOut}</td><td>{fmt(r.total)} <small className="muted">(com. {fmt(r.commission)}{r.extrasTotal ? ` · extras ${fmt(r.extrasTotal)}` : ""})</small></td>
                     <td>{r.status === "confirmada" ? "Confirmada" : "Cancelada"}</td>
                     <td>{r.status === "confirmada" ? <button className="btn btn-ghost" onClick={() => setResStatus(r.id, "cancelada")}>Cancelar</button> : <button className="btn btn-ghost" onClick={() => setResStatus(r.id, "confirmada")}>Reactivar</button>}</td></tr>
                 ))}</tbody>

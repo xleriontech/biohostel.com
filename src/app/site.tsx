@@ -230,7 +230,7 @@ export default function Site() {
       }
       const r = d.reservation;
       setAiOk(true);
-      setAiMsg(`${r.aiReport} Subtotal ${fmt(r.base)} + comisión ${fmt(r.commission)} = Total ${fmt(r.total)}. Código ${r.code}.${(extrasData as {seguro?:boolean; desayuno?:boolean}).seguro ? ' · Seguro incluido' : ''}${(extrasData as {seguro?:boolean; desayuno?:boolean}).desayuno ? ' · Desayuno incluido' : ''}`);
+      setAiMsg(`${r.aiReport} Subtotal ${fmt(r.base)} + comisión ${fmt(r.commission)}${r.extrasTotal ? ` + extras ${fmt(r.extrasTotal)}` : ""} = Total ${fmt(r.total)}. Código ${r.code}.${r.extras?.seguro ? " · Seguro incluido" : ""}${r.extras?.desayuno ? " · Desayuno incluido" : ""}`);
       setSugerencia(null);
       notify(`Reserva ${r.code} confirmada · ${fmt(r.total)}`);
     } catch { notify("Error de conexión al reservar."); } finally { setReserving(false); }

@@ -1,15 +1,39 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { store } from "@/lib/store";
 import { Suspense } from "react";
 import ReservaForm from "./reserva-form";
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const listings = await store.listings();
   const l = listings.find((x) => x.slug === slug || x.id === slug);
   if (!l) return { title: "No encontrado" };
-  return { title: `${l.titulo} — Micrositio independiente` };
+  const url = `/p/${l.slug || l.id}`;
+  const title = `${l.titulo} — BioHostel.com`;
+  const description = l.descripcion.slice(0, 160);
+  const image = l.galeria[0];
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website",
+      siteName: "BioHostel.com",
+      locale: "es_CO",
+      url,
+      title,
+      description,
+      ...(image ? { images: [{ url: image, alt: l.titulo }] } : {}),
+    },
+    twitter: {
+      card: image ? "summary_large_image" : "summary",
+      title,
+      description,
+      ...(image ? { images: [image] } : {}),
+    },
+  };
 }
 
 export default async function MiniSite({ params }: { params: Promise<{ slug: string }> }) {
@@ -20,10 +44,7 @@ export default async function MiniSite({ params }: { params: Promise<{ slug: str
   const p = (listing.theme?.primary) || "#1d4a2c";
   return (
     <>
-      <head>
-        <title>{`${listing.titulo} — Micrositio`}</title>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context":"https://schema.org","@type":"LodgingBusiness","name":listing.titulo,"url":"/p/"+(listing.slug||listing.id),"address":{"@type":"PostalAddress","addressLocality":listing.ciudad},"aggregateRating":{"@type":"AggregateRating","ratingValue":listing.rating,"reviewCount":listing.resenas},"image":listing.galeria[0],"amenityFeature":listing.amenidades.map((a:string)=>({"@type":"LocationFeatureSpecification","name":a})) }) }} />
-      </head>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context":"https://schema.org","@type":"LodgingBusiness","name":listing.titulo,"url":"/p/"+(listing.slug||listing.id),"address":{"@type":"PostalAddress","addressLocality":listing.ciudad},"aggregateRating":{"@type":"AggregateRating","ratingValue":listing.rating,"reviewCount":listing.resenas},"image":listing.galeria[0],"amenityFeature":listing.amenidades.map((a:string)=>({"@type":"LocationFeatureSpecification","name":a})) }) }} />
       <main style={{ fontFamily: "system-ui, sans-serif", background: "#f7fdf4", color: "#1a2e22" }}>
         <header style={{ padding: 20, display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(255,255,255,0.92)", position: "sticky", top: 0, zIndex: 50 }}>
           <Link href="/" style={{ fontWeight: 900, fontSize: 18, color: p, textDecoration: "none" }}>{listing.titulo}</Link>

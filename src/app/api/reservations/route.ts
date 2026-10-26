@@ -92,6 +92,11 @@ export async function POST(req: Request) {
   const hostPlan = l.ownerId === "demo" ? l.anfitrion.plan : (await store.users()).find((u) => u.id === l.ownerId)?.plan ?? "gratuito";
   const rate = (await rates())[hostPlan] ?? 0.1;
   const commission = Math.round(base * rate);
+  // Extras elegidos en el formulario: seguro de cancelación +5% sobre el
+  // alojamiento y desayuno fijo de $20.000 COP por reserva. No generan
+  // comisión de plataforma (comisión se calcula solo sobre `base`).
+  const extrasSel = { seguro: !!extras?.seguro, desayuno: !!extras?.desayuno };
+  const extrasTotal = (extrasSel.seguro ? Math.round(base * 0.05) : 0) + (extrasSel.desayuno ? 20000 : 0);
   const code = "BIO-" + Date.now().toString(36).toUpperCase().slice(-6);
   const r = {
     id: uid("res"),
@@ -107,7 +112,9 @@ export async function POST(req: Request) {
     base,
     commission,
     rate,
-    total: base + commission,
+    extras: extrasSel,
+    extrasTotal,
+    total: base + commission + extrasTotal,
     status: "confirmada",
     aiReport: `Verificación IA: ${n} noche(s) libres en ${lchs.length ? lchs.map((c) => c.platform).join(", ") + ", " : ""}Booking y Airbnb. Marcada como reservada en todos los canales.`,
     createdAt: new Date().toISOString(),

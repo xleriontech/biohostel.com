@@ -1,0 +1,370 @@
+
+ÔÜá You are using a non-standard "NODE_ENV" value in your environment. This creates inconsistencies in the project and is strongly advised against. Read more: https://nextjs.org/docs/messages/non-standard-node-env
+> build
+uncaughtException Error: spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd ENOENT
+> next build
+
+Ôû▓ Next.js 16.3.8 (Turbopack)
+    at ignore-listed frames {
+Ô£ô Running next.config.ts took 635ms
+  errno: -2,
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+  code: 'ENOENT',
+This information is used to shape Next.js' roadmap and prioritize features.
+  syscall: 'spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+Using secrets defined in .dev.vars
+
+  Creating an optimized production build ...
+
+> build
+> next build
+
+Ôû▓ Next.js 16.3.8 (Turbopack)
+Ô£ô Running next.config.ts took 598ms
+Using secrets defined in .dev.vars
+
+
+> build
+> next build
+
+Ôû▓ Next.js 16.3.8 (Turbopack)
+Ô£ô Running next.config.ts took 550ms
+  path: '/app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+Using secrets defined in .dev.vars
+  spawnargs: [
+
+
+> build
+> next build
+
+    'serve',
+Ôû▓ Next.js 16.3.8 (Turbopack)
+Ô£ô Running next.config.ts took 527ms
+Using secrets defined in .dev.vars
+
+
+> build
+> next build
+
+Ôû▓ Next.js 16.3.8 (Turbopack)
+Ô£ô Running next.config.ts took 555ms
+Using secrets defined in .dev.vars
+
+
+> build
+    '--binary',
+    '--experimental',
+    '--socket-addr=entry=127.0.0.1:0',
+    '--external-addr=loopback=127.0.0.1:43227',
+    '--control-fd=3',
+    '-',
+    '--debug-port=127.0.0.1:0'
+  ]
+}
+ÔÜá You are using a non-standard "NODE_ENV" value in your environment. This creates inconsistencies in the project and is strongly advised against. Read more: https://nextjs.org/docs/messages/non-standard-node-env
+uncaughtException Error: spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd ENOENT
+    at ignore-listed frames {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+> next build
+
+Ôû▓ Next.js 16.3.8 (Turbopack)
+Ô£ô Running next.config.ts took 623ms
+Using secrets defined in .dev.vars
+
+
+> build
+> next build
+
+Ôû▓ Next.js 16.3.8 (Turbopack)
+Ô£ô Running next.config.ts took 527ms
+Using secrets defined in .dev.vars
+
+  path: '/app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+  spawnargs: [
+    'serve',
+    '--binary',
+    '--experimental',
+    '--socket-addr=entry=127.0.0.1:0',
+    '--external-addr=loopback=127.0.0.1:44085',
+    '--control-fd=3',
+    '-',
+    '--debug-port=127.0.0.1:0'
+  ]
+}
+ÔÜá You are using a non-standard "NODE_ENV" value in your environment. This creates inconsistencies in the project and is strongly advised against. Read more: https://nextjs.org/docs/messages/non-standard-node-env
+uncaughtException Error: spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd ENOENT
+    at ignore-listed frames {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+  path: '/app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+  spawnargs: [
+    'serve',
+    '--binary',
+    '--experimental',
+    '--socket-addr=entry=127.0.0.1:0',
+    '--external-addr=loopback=127.0.0.1:38089',
+    '--control-fd=3',
+    '-',
+    '--debug-port=127.0.0.1:0'
+  ]
+}
+
+ÔÜá You are using a non-standard "NODE_ENV" value in your environment. This creates inconsistencies in the project and is strongly advised against. Read more: https://nextjs.org/docs/messages/non-standard-node-env
+uncaughtException Error: spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd ENOENT
+    at ignore-listed frames {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+  path: '/app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+  spawnargs: [
+    'serve',
+    '--binary',
+> build
+> next build
+
+Ôû▓ Next.js 16.3.8 (Turbopack)
+    '--experimental',
+Ô£ô Running next.config.ts took 625ms
+Using secrets defined in .dev.vars
+    '--socket-addr=entry=127.0.0.1:0',
+
+    '--external-addr=loopback=127.0.0.1:41569',
+    '--control-fd=3',
+    '-',
+    '--debug-port=127.0.0.1:0'
+  ]
+}
+ÔÜá You are using a non-standard "NODE_ENV" value in your environment. This creates inconsistencies in the project and is strongly advised against. Read more: https://nextjs.org/docs/messages/non-standard-node-env
+uncaughtException Error: spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd ENOENT
+    at ignore-listed frames {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+  path: '/app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+  spawnargs: [
+    'serve',
+    '--binary',
+    '--experimental',
+    '--socket-addr=entry=127.0.0.1:0',
+    '--external-addr=loopback=127.0.0.1:32791',
+    '--control-fd=3',
+    '-',
+    '--debug-port=127.0.0.1:0'
+  ]
+}
+ÔÜá You are using a non-standard "NODE_ENV" value in your environment. This creates inconsistencies in the project and is strongly advised against. Read more: https://nextjs.org/docs/messages/non-standard-node-env
+uncaughtException Error: spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd ENOENT
+    at ignore-listed frames {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+  path: '/app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+  spawnargs: [
+    'serve',
+    '--binary',
+    '--experimental',
+
+    '--socket-addr=entry=127.0.0.1:0',
+    '--external-addr=loopback=127.0.0.1:43131',
+    '--control-fd=3',
+    '-',
+    '--debug-port=127.0.0.1:0'
+  ]
+}
+ÔÜá You are using a non-standard "NODE_ENV" value in your environment. This creates inconsistencies in the project and is strongly advised against. Read more: https://nextjs.org/docs/messages/non-standard-node-env
+uncaughtException Error: spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd ENOENT
+    at ignore-listed frames {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+  path: '/app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+  spawnargs: [
+    'serve',
+    '--binary',
+    '--experimental',
+    '--socket-addr=entry=127.0.0.1:0',
+    '--external-addr=loopback=127.0.0.1:41727',
+    '--control-fd=3',
+    '-',
+    '--debug-port=127.0.0.1:0'
+  ]
+}
+> build
+> next build
+
+Ôû▓ Next.js 16.3.8 (Turbopack)
+Ô£ô Running next.config.ts took 687ms
+Using secrets defined in .dev.vars
+
+ÔÜá You are using a non-standard "NODE_ENV" value in your environment. This creates inconsistencies in the project and is strongly advised against. Read more: https://nextjs.org/docs/messages/non-standard-node-env
+uncaughtException Error: spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd ENOENT
+    at ignore-listed frames {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+  path: '/app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+  spawnargs: [
+    'serve',
+    '--binary',
+    '--experimental',
+    '--socket-addr=entry=127.0.0.1:0',
+    '--external-addr=loopback=127.0.0.1:35723',
+    '--control-fd=3',
+    '-',
+    '--debug-port=127.0.0.1:0'
+  ]
+}
+ÔÜá You are using a non-standard "NODE_ENV" value in your environment. This creates inconsistencies in the project and is strongly advised against. Read more: https://nextjs.org/docs/messages/non-standard-node-env
+uncaughtException Error: spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd ENOENT
+    at ignore-listed frames {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+  path: '/app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+  spawnargs: [
+    'serve',
+    '--binary',
+    '--experimental',
+    '--socket-addr=entry=127.0.0.1:0',
+    '--external-addr=loopback=127.0.0.1:46139',
+    '--control-fd=3',
+    '-',
+    '--debug-port=127.0.0.1:0'
+  ]
+}
+
+ÔÜá You are using a non-standard "NODE_ENV" value in your environment. This creates inconsistencies in the project and is strongly advised against. Read more: https://nextjs.org/docs/messages/non-standard-node-env
+> build
+> next build
+
+Ôû▓ Next.js 16.3.8 (Turbopack)
+Ô£ô Running next.config.ts took 725ms
+Using secrets defined in .dev.vars
+
+uncaughtException Error: spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd ENOENT
+    at ignore-listed frames {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+  path: '/app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+  spawnargs: [
+    'serve',
+    '--binary',
+    '--experimental',
+
+> build
+> next build
+
+Ôû▓ Next.js 16.3.8 (Turbopack)
+    '--socket-addr=entry=127.0.0.1:0',
+    '--external-addr=loopback=127.0.0.1:41369',
+    '--control-fd=3',
+    '-',
+    '--debug-port=127.0.0.1:0'
+  ]
+}
+ÔÜá You are using a non-standard "NODE_ENV" value in your environment. This creates inconsistencies in the project and is strongly advised against. Read more: https://nextjs.org/docs/messages/non-standard-node-env
+uncaughtException Error: spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd ENOENT
+    at ignore-listed frames {
+Ô£ô Running next.config.ts took 546ms
+Using secrets defined in .dev.vars
+
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+  path: '/app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+
+  spawnargs: [
+    'serve',
+    '--binary',
+    '--experimental',
+    '--socket-addr=entry=127.0.0.1:0',
+    '--external-addr=loopback=127.0.0.1:33799',
+    '--control-fd=3',
+    '-',
+    '--debug-port=127.0.0.1:0'
+  ]
+}
+> build
+> next build
+
+Ôû▓ Next.js 16.3.8 (Turbopack)
+Ô£ô Running next.config.ts took 502ms
+ÔÜá You are using a non-standard "NODE_ENV" value in your environment. This creates inconsistencies in the project and is strongly advised against. Read more: https://nextjs.org/docs/messages/non-standard-node-env
+uncaughtException Error: spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd ENOENT
+    at ignore-listed frames {
+Using secrets defined in .dev.vars
+
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+  path: '/app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+  spawnargs: [
+    'serve',
+    '--binary',
+    '--experimental',
+    '--socket-addr=entry=127.0.0.1:0',
+    '--external-addr=loopback=127.0.0.1:37385',
+    '--control-fd=3',
+    '-',
+    '--debug-port=127.0.0.1:0'
+  ]
+}
+
+ÔÜá You are using a non-standard "NODE_ENV" value in your environment. This creates inconsistencies in the project and is strongly advised against. Read more: https://nextjs.org/docs/messages/non-standard-node-env
+> build
+> next build
+
+Ôû▓ Next.js 16.3.8 (Turbopack)
+Ô£ô Running next.config.ts took 505ms
+Using secrets defined in .dev.vars
+
+uncaughtException Error: spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd ENOENT
+    at ignore-listed frames {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+  path: '/app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+  spawnargs: [
+    'serve',
+    '--binary',
+    '--experimental',
+    '--socket-addr=entry=127.0.0.1:0',
+    '--external-addr=loopback=127.0.0.1:43577',
+    '--control-fd=3',
+    '-',
+    '--debug-port=127.0.0.1:0'
+  ]
+}
+
+ÔÜá You are using a non-standard "NODE_ENV" value in your environment. This creates inconsistencies in the project and is strongly advised against. Read more: https://nextjs.org/docs/messages/non-standard-node-env
+> build
+> next build
+
+Ôû▓ Next.js 16.3.8 (Turbopack)
+Ô£ô Running next.config.ts took 457ms
+Using secrets defined in .dev.vars
+
+uncaughtException Error: spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd ENOENT
+    at ignore-listed frames {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'spawn /app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+  path: '/app/node_modules/@cloudflare/workerd-linux-64/bin/workerd',
+  spawnargs: [
+    'serve',
+    '--binary',
+    '--experimental',
+    '--socket-addr=entry=127.0.0.1:0',
+    '--external-addr=loopback=127.0.0.1:33525',
+    '--control-fd=3',
+    '-',
+    '--debug-port=127.0.0.1:0'
+  ]
+}

@@ -57,6 +57,8 @@ export type StoredReservation = {
   base: number;
   commission: number;
   rate: number;
+  extras?: { seguro: boolean; desayuno: boolean };
+  extrasTotal?: number;
   total: number;
   status: string;
   aiReport: string;
