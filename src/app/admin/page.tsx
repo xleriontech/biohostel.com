@@ -10,6 +10,7 @@ import { Icon } from "../icons";
 import { useCurrency } from "@/lib/currency";
 import { BarChart, DonutChart, LineChart, downloadCSV, downloadJSON } from "./charts";
 import { SiteSettingsPanel } from "./site-settings";
+import { ListingEditForm } from "@/components/listing-edit-form";
 
 type AdminUser = { id: string; name: string; email: string; plan: string; role: string; banned?: boolean; favorites: string[]; follows: string[] };
 type Overview = { users: number; admins: number; byPlan: Record<string, number>; listings: number; activeListings: number; reservations: number; confirmed: number; gmv: number; commissions: number; leads: number; ads: number };
@@ -67,6 +68,7 @@ export default function Admin() {
   const [bannerType, setBannerType] = useState<string>("tarjeta");
   const [previewAdId, setPreviewAdId] = useState("");
   const [listingDetail, setListingDetail] = useState<Row | null>(null);
+  const [editingListing, setEditingListing] = useState<Row | null>(null);
   // config
   const [rates, setRates] = useState({ gratuito: 10, corporativo: 5, premium: 0 });
   // IA + RAG
@@ -744,7 +746,8 @@ export default function Admin() {
                   </div>
                 )}
                 <div className="row" style={{ marginTop: 14 }}>
-                  <button className="btn btn-green" onClick={async () => { await call("/api/admin/listings", "PATCH", { id: listingDetail.id, active: !(listingDetail.active !== false) }); setListingDetail(null); }}>
+                  <button className="btn btn-green" onClick={() => setEditingListing(listingDetail)}><Icon name="edit" size={14} /> Editar contenido</button>
+                  <button className="btn btn-ghost" onClick={async () => { await call("/api/admin/listings", "PATCH", { id: listingDetail.id, active: !(listingDetail.active !== false) }); setListingDetail(null); }}>
                     {listingDetail.active !== false ? "Pausar publicación" : "Activar publicación"}
                   </button>
                   <button className="btn btn-ghost" onClick={() => call("/api/admin/listings", "PATCH", { id: listingDetail.id, featured: !listingDetail.featured })}>{listingDetail.featured ? "Quitar destacado" : "Destacar"}</button>
@@ -766,6 +769,16 @@ export default function Admin() {
           </div>
         );
       })()}
+
+      {editingListing && (
+        <ListingEditForm
+          listing={editingListing}
+          endpoint="/api/admin/listings"
+          notify={notify}
+          onClose={() => setEditingListing(null)}
+          onSaved={() => { setEditingListing(null); setListingDetail(null); loadAll(); }}
+        />
+      )}
 
       {toast && <div className="toast">{toast}</div>}
     </div>

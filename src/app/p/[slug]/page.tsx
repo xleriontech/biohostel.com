@@ -75,15 +75,29 @@ export default async function MiniSite({ params }: { params: Promise<{ slug: str
     { titulo: "Yoga / Bienestar", desc: "Espacios de descanso y prácticas de bienestar." },
     { titulo: "Gastronomía", desc: "Sabores y productos locales del territorio." },
   ];
+  const sections = [
+    { label: "Inicio", href: "#inicio" },
+    { label: "Estancia", href: "#estancia" },
+    ...(listing.amenidades.length ? [{ label: "Amenidades", href: "#amenidades" }] : []),
+    { label: "Experiencias", href: "#experiencias" },
+    { label: "Disponibilidad", href: "#disponibilidad" },
+    { label: "Reseñas", href: "#resenas" },
+  ];
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context":"https://schema.org","@type":"LodgingBusiness","name":listing.titulo,"url":"/p/"+(listing.slug||listing.id),"address":{"@type":"PostalAddress","addressLocality":listing.ciudad},"aggregateRating":{"@type":"AggregateRating","ratingValue":listing.rating,"reviewCount":listing.resenas},"image":listing.galeria[0],"amenityFeature":listing.amenidades.map((a:string)=>({"@type":"LocationFeatureSpecification","name":a})) }) }} />
       <main style={{ fontFamily: "var(--sans)", background: "#f7fdf4", color: "#1a2e22" }}>
-        <header style={{ padding: 20, display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(255,255,255,0.92)", position: "sticky", top: 0, zIndex: 50 }}>
-          <Link href="/" style={{ fontWeight: 900, fontSize: 18, color: p, textDecoration: "none" }}>{listing.titulo}</Link>
-          <Link href="/" style={{ fontWeight: 700, fontSize: 14, color: p, textDecoration: "underline" }}>Volver</Link>
+        <header style={{ padding: "12px 20px", display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", background: "rgba(255,255,255,0.95)", backdropFilter: "blur(8px)", borderBottom: `1px solid ${p}1a`, position: "sticky", top: 0, zIndex: 50 }}>
+          <Link href="/" title={listing.titulo} style={{ fontWeight: 900, fontSize: 16, color: p, textDecoration: "none", maxWidth: 300, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{listing.titulo}</Link>
+          <nav className="ms-nav" aria-label="Secciones del alojamiento">
+            {sections.map((s) => <a key={s.href} href={s.href}>{s.label}</a>)}
+          </nav>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <Link href="/" style={{ fontWeight: 700, fontSize: 13, color: p, textDecoration: "none" }}>Volver</Link>
+            <a href="#reserva" style={{ background: p, color: "#fff", fontWeight: 700, fontSize: 13, textDecoration: "none", padding: "9px 16px", borderRadius: 999 }}>Reservar</a>
+          </div>
         </header>
-        <section style={{ background: `linear-gradient(135deg, ${p}, #bef264 70%, #bef264)`, color: "#fff", textAlign: "center", padding: "80px 24px", position: "relative" }}>
+        <section id="inicio" style={{ scrollMarginTop: 84, background: `linear-gradient(135deg, ${p}, #bef264 70%, #bef264)`, color: "#fff", textAlign: "center", padding: "80px 24px", position: "relative" }}>
           <img src={listing.galeria[0]} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.15, filter: "blur(2px)" }} />
           <div style={{ position: "relative", zIndex: 1 }}>
             <h1 style={{ fontSize: "clamp(36px,6vw,68px)", fontWeight: 900, marginBottom: 16 }}>{listing.titulo}</h1>
@@ -100,7 +114,7 @@ export default async function MiniSite({ params }: { params: Promise<{ slug: str
             </div>
           </div>
         </section>
-        <div style={{ maxWidth: 980, margin: "0 auto", padding: "64px 24px" }}>
+        <div id="estancia" style={{ maxWidth: 980, margin: "0 auto", padding: "64px 24px", scrollMarginTop: 84 }}>
           <section style={{ marginBottom: 32, background: "#fff", borderRadius: 20, padding: 24, border: `1px solid ${p}18` }}>
               <h2 style={{ fontSize: "1.5rem", fontWeight: 800, color: p, marginBottom: 16, fontFamily: "var(--display)" }}>Información de estancia</h2>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
@@ -156,7 +170,7 @@ export default async function MiniSite({ params }: { params: Promise<{ slug: str
               </div>
             </section>
         </div>
-        <div style={{ maxWidth: 980, margin: "0 auto", padding: "64px 24px", background: "#fff", borderRadius: 24, boxShadow: "0 6px 32px rgba(26,46,34,0.05)", border: "1px solid rgba(26,46,34,0.06)" }}>
+        <div id="amenidades" style={{ maxWidth: 980, margin: "0 auto", padding: "64px 24px", background: "#fff", borderRadius: 24, boxShadow: "0 6px 32px rgba(26,46,34,0.05)", border: "1px solid rgba(26,46,34,0.06)", scrollMarginTop: 84 }}>
           <h2 style={{ fontSize: "2rem", fontWeight: 800, color: p }}>Amenidades</h2>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
             {listing.amenidades.map((a: string, i: number) => (
@@ -164,7 +178,7 @@ export default async function MiniSite({ params }: { params: Promise<{ slug: str
             ))}
           </div>
         </div>
-        <div style={{ maxWidth: 980, margin: "0 auto", padding: "64px 24px" }}>
+        <div id="experiencias" style={{ maxWidth: 980, margin: "0 auto", padding: "64px 24px", scrollMarginTop: 84 }}>
           <h2 style={{ fontSize: "2rem", fontWeight: 800, color: p }}>Experiencias</h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
             {experiences.map((exp) => (
@@ -179,15 +193,19 @@ export default async function MiniSite({ params }: { params: Promise<{ slug: str
           </a>
 
           <div style={{ position: "sticky", top: 100 }}>
-            <div id="reserva" style={{ maxWidth: 980, margin: "0 auto", padding: "72px 24px", textAlign: "center", background: "#fff", borderRadius: 24, boxShadow: "0 6px 32px rgba(26,46,34,0.05)", border: "1px solid rgba(26,46,34,0.06)" }}>
+            <div id="reserva" style={{ maxWidth: 980, margin: "0 auto", padding: "72px 24px", textAlign: "center", background: "#fff", borderRadius: 24, boxShadow: "0 6px 32px rgba(26,46,34,0.05)", border: "1px solid rgba(26,46,34,0.06)", scrollMarginTop: 84 }}>
               <Suspense>
                 <ReservaForm listingId={listing.id} defaultCheckIn={defaultCheckIn} defaultCheckOut={defaultCheckOut} />
               </Suspense>
             </div>
 
-            <AvailabilityCalendar listing={listing} />
+            <div id="disponibilidad" style={{ scrollMarginTop: 84 }}>
+              <AvailabilityCalendar listing={listing} />
+            </div>
 
-            <ReviewsSection listingId={listing.id} />
+            <div id="resenas" style={{ scrollMarginTop: 84 }}>
+              <ReviewsSection listingId={listing.id} />
+            </div>
           </div>
           </div>
 

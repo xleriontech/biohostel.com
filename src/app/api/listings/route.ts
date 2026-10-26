@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
 import { store, uid } from "@/lib/store";
 import { currentUser } from "@/lib/server-auth";
+import { applyListingEdit } from "@/lib/listing-edit";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const scope = new URL(req.url).searchParams.get("scope");
+  if (scope === "mine") {
+    const me = await currentUser();
+    if (!me) return NextResponse.json({ error: "Inicia sesión." }, { status: 401 });
+    return NextResponse.json({ listings: (await store.listings()).filter((l) => l.ownerId === me.id) });
+  }
   const listings = (await store.listings()).filter((l) => l.active !== false);
   return NextResponse.json({ listings });
 }
@@ -94,6 +101,27 @@ export async function POST(req: Request) {
     await store.saveListingChannels(chs);
   }
   return NextResponse.json({ listing: nuevo });
+}
+
+export async function PATCH(req: Request) {
+  const me = await currentUser();
+  if (!me) return NextResponse.json({ error: "Inicia sesión." }, { status: 401 });
+  const body = await req.json().catch(() => ({}));
+  const all = await store.listings();
+  const listing = all.find((l) => l.id === body.id);
+  if (!listing) return NextResponse.json({ error: "No existe." }, { status: 404 });
+  if (listing.ownerId !== me.id) return NextResponse.json({ error: "No es tu publicación." }, { status: 403 });
+
+  const limits = me.plan === "gratuito" ? { maxFotos: 5, maxDesc: 300 } : { maxFotos: 30, maxDesc: 5000 };
+  const error = applyListingEdit(listing, body, limits);
+  if (error) return NextResponse.json({ error }, { status: 400 });
+  if (typeof body.active === "boolean") listing.active = body.active;
+
+  await store.saveListings(all);
+  const { indexListing, removeFromIndex } = await import("@/lib/rag");
+  if (listing.active === false) await removeFromIndex(listing.id).catch(() => null);
+  else await indexListing(listing).catch(() => null);
+  return NextResponse.json({ listing });
 }
 
 export async function DELETE(req: Request) {

@@ -10,8 +10,10 @@ import { Brand } from "../brand";
 import { Icon } from "../icons";
 import { useSiteSettings } from "../site-settings-context";
 import { useCurrency } from "@/lib/currency";
+import { ListingEditForm } from "@/components/listing-edit-form";
 
 type User = { id: string; name: string; email: string; plan: PlanId; role?: string; favorites: string[]; follows: string[] };
+type MyListing = Listing & { active?: boolean };
 type Reservation = { id: string; code: string; listingTitle: string; guestName: string; checkIn: string; checkOut: string; guests: number; base: number; commission: number; extrasTotal?: number; total: number; status: string; aiReport: string; createdAt: string };
 type Lead = { id: string; tipo: string; nombre: string; email: string; mensaje: string; detalle: string; createdAt: string };
 type Channel = { id: string; plataforma: string; cuenta: string; ultima: string };
@@ -24,8 +26,9 @@ export default function Panel() {
   const [tab, setTab] = useState("resumen");
   const [user, setUser] = useState<User | null>(null);
   const [received, setReceived] = useState<Reservation[]>([]);
-  const [mine, setMine] = useState<Listing[]>([]);
+  const [mine, setMine] = useState<MyListing[]>([]);
   const [allListings, setAllListings] = useState<Listing[]>([]);
+  const [editing, setEditing] = useState<MyListing | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [channels, setChannels] = useState<Channel[]>([]);
   const [toast, setToast] = useState("");
@@ -108,16 +111,16 @@ export default function Panel() {
     const me = await fetch("/api/auth/me").then((r) => r.json()).catch(() => ({ user: null }));
     setUser(me.user ?? null);
     if (!me.user) return;
-    const [res, lst, lds, chs] = await Promise.all([
+    const [res, lst, own, lds, chs] = await Promise.all([
       fetch("/api/reservations").then((r) => r.json()).catch(() => ({})),
       fetch("/api/listings").then((r) => r.json()).catch(() => ({})),
+      fetch("/api/listings?scope=mine").then((r) => r.json()).catch(() => ({})),
       fetch("/api/leads").then((r) => r.json()).catch(() => ({})),
       fetch("/api/channels").then((r) => r.json()).catch(() => ({})),
     ]);
     setReceived(res.received ?? []);
-    const all: Listing[] = lst.listings ?? [];
-    setAllListings(all);
-    setMine(all.filter((l) => (l as unknown as { ownerId?: string }).ownerId === me.user.id));
+    setAllListings(lst.listings ?? []);
+    setMine(own.listings ?? []);
     setLeads(lds.leads ?? []);
     setChannels(chs.channels ?? []);
   }
@@ -211,6 +214,19 @@ export default function Panel() {
     if (!confirm("¿Eliminar esta publicación del sitio?")) return;
     await fetch(`/api/listings?id=${id}`, { method: "DELETE" });
     notify("Publicación eliminada.");
+    refresh();
+  }
+
+  async function toggleListing(p: MyListing) {
+    const active = p.active === false;
+    const res = await fetch("/api/listings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: p.id, active }),
+    });
+    const d = await res.json();
+    if (!res.ok) { notify(d.error ?? "No se pudo actualizar."); return; }
+    notify(active ? "Publicación activada: ya aparece en el sitio." : "Publicación pausada: sigue en tu panel pero no en el sitio.");
     refresh();
   }
 
@@ -414,16 +430,19 @@ export default function Panel() {
 
             <h3 style={{ marginTop: 26 }}>Mis publicaciones ({mine.length}/{plan === "gratuito" ? 1 : plan === "corporativo" ? 20 : "∞"})</h3>
             {mine.length === 0 ? <p className="muted">Nada publicado aún. Importa una web arriba.</p> : (
-              <table className="tbl"><thead><tr><th>TÍTULO</th><th>TIPO</th><th>PRECIO</th><th>FOTOS</th><th></th></tr></thead>
+              <table className="tbl"><thead><tr><th>TÍTULO</th><th>TIPO</th><th>PRECIO</th><th>FOTOS</th><th>ESTADO</th><th></th></tr></thead>
                 <tbody>{mine.map((p) => (
                   <Fragment key={p.id}>
                     <tr><td>{p.titulo}</td><td>{p.tipo}</td><td>{fmt(p.precioNoche)}</td><td>{p.galeria.length}</td>
+                      <td>{p.active === false ? <span className="tag" style={{ background: "#fef3c7", color: "#92400e" }}>Pausada</span> : <span className="tag tag-reserva">Publicada</span>}</td>
                       <td><div className="row">
+                        <button className="btn btn-ghost" onClick={() => setEditing(p)}><Icon name="edit" size={14} /> Editar</button>
                         <button className="btn btn-ghost" onClick={() => { const open = chOpen === p.id ? "" : p.id; setChOpen(open); if (open) loadChannels(p.id); }}>Canales IA</button>
+                        <button className="btn btn-ghost" onClick={() => toggleListing(p)}>{p.active === false ? "Activar" : "Pausar"}</button>
                         <button className="btn btn-ghost" onClick={() => eliminarListing(p.id)}>Eliminar</button>
                       </div></td></tr>
                     {chOpen === p.id && (
-                      <tr key={`${p.id}-ch`}><td colSpan={5}>
+                      <tr key={`${p.id}-ch`}><td colSpan={6}>
                         <strong>Canales de “{p.titulo}”</strong>
                         <p className="muted">Agrega los links de Airbnb/Booking donde está el predio. Con el <strong>iCal</strong> (Airbnb → Disponibilidad → Exportar calendario) la IA lee la ocupación real. Al confirmar una reserva, la IA la marca aquí y te da el feed para devolver el bloqueo a esas plataformas.</p>
                         {chList.length === 0 ? <p className="muted">Sin canales. Agrega el primero abajo.</p> : (
@@ -469,6 +488,16 @@ export default function Panel() {
           </>
         )}
       </div>
+      {editing && (
+        <ListingEditForm
+          listing={editing}
+          endpoint="/api/listings"
+          maxDesc={plan === "gratuito" ? 300 : 5000}
+          notify={notify}
+          onClose={() => setEditing(null)}
+          onSaved={() => { setEditing(null); refresh(); }}
+        />
+      )}
       {toast && <div className="toast">{toast}</div>}
     </div>
   );

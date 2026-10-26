@@ -4,7 +4,7 @@ export type IconName =
   | "check" | "verified" | "x" | "calendar" | "globe" | "sun" | "moon"
   | "arrow" | "arrowLeft" | "plus" | "message" | "case" | "bed" | "home"
   | "ticket" | "gem" | "hands" | "tree" | "waves" | "book" | "download"
-  | "rocket" | "refresh"   | "trash" | "logout" | "bot" | "card" | "eye" | "menu" | "send";
+  | "rocket" | "refresh"   | "trash" | "logout" | "bot" | "card" | "eye" | "menu" | "send" | "edit";
 
 const PATHS: Record<IconName, React.ReactNode> = {
   logo: <path d="M12 21c-5 0-8-3-8-8 0-5 4-9 10-10-.5 6-1 12-6 14 2 2 3 4 4 4Zm0 0c0-4 1-8 4-11" />,
@@ -44,6 +44,7 @@ const PATHS: Record<IconName, React.ReactNode> = {
   eye: <><path d="M3.5 12S6 6.5 12 6.5 20.5 12 20.5 12 18 17.5 12 17.5 3.5 12 3.5 12Z" /><circle cx="12" cy="12" r="2.5" /></>,
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
   send: <><path d="M20 4 10.5 13.5M20 4l-6.5 16-3-6.5L4 10.5 20 4Z" /></>,
+  edit: <><path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3Z" /><path d="m14.5 6.5 3 3" /></>,
 };
 
 export function Icon({ name, size = 20, filled = false }: { name: IconName; size?: number; filled?: boolean }) {
