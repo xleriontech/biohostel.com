@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
 import "./globals.modern.css";
+import "./landing.css";
 import { store } from "@/lib/store";
 import { DEFAULT_SITE_SETTINGS, siteThemeCss, type SiteSettings } from "@/lib/site-settings";
 import { SiteSettingsProvider } from "./site-settings-context";
