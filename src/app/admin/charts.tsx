@@ -35,30 +35,27 @@ export function DonutChart({ data, size = 180 }: { data: { label: string; value:
   const total = Math.max(1, data.reduce((s, d) => s + d.value, 0));
   const R = 60;
   const C = 2 * Math.PI * R;
-  let acc = 0;
+  // Cálculo puro (sin mutar durante el render): fracciones y desplazamientos acumulados.
+  const fracs = data.map((d) => d.value / total);
+  const offsets = fracs.map((_, i) => fracs.slice(0, i).reduce((s, v) => s + v, 0));
   return (
     <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
       <svg width={size} height={size} viewBox="0 0 160 160" role="img">
         <circle cx={80} cy={80} r={R} fill="none" stroke="var(--line)" strokeWidth={26} />
-        {data.map((d, i) => {
-          const frac = d.value / total;
-          const el = (
-            <circle
-              key={d.label}
-              cx={80}
-              cy={80}
-              r={R}
-              fill="none"
-              stroke={d.color ?? PALETTE[i % PALETTE.length]}
-              strokeWidth={26}
-              strokeDasharray={`${frac * C} ${C}`}
-              strokeDashoffset={-acc * C}
-              transform="rotate(-90 80 80)"
-            />
-          );
-          acc += frac;
-          return el;
-        })}
+        {data.map((d, i) => (
+          <circle
+            key={d.label}
+            cx={80}
+            cy={80}
+            r={R}
+            fill="none"
+            stroke={d.color ?? PALETTE[i % PALETTE.length]}
+            strokeWidth={26}
+            strokeDasharray={`${fracs[i] * C} ${C}`}
+            strokeDashoffset={-offsets[i] * C}
+            transform="rotate(-90 80 80)"
+          />
+        ))}
         <text x={80} y={76} textAnchor="middle" fontSize={22} fontWeight={800} fill="currentColor">{total}</text>
         <text x={80} y={94} textAnchor="middle" fontSize={10} fill="currentColor" opacity={0.7}>total</text>
       </svg>

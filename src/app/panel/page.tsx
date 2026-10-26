@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { ADS, PLANS, type Listing, type PlanId } from "@/lib/data";
+import { ADS, PLANS, type Listing, type ListingTheme, type PlanId } from "@/lib/data";
 import { ThemeToggle } from "../theme-toggle";
 import { CurrencySelect } from "../currency-select";
 import { AuthModal } from "../auth-modal";
@@ -216,8 +217,8 @@ export default function Panel() {
       <div>
         <div className="topbar">PANEL DE CONTROL · BIOHOSTEL.COM</div>
         <header className="header"><div className="page header-in">
-          <a className="brand" href="/"><span className="brand-mark"><Icon name="logo" size={22} /></span><span>biohostel<small>PANEL</small></span></a>
-          <div className="hactions"><CurrencySelect /><ThemeToggle /><a className="btn btn-ghost" href="/">← Ver sitio</a></div>
+          <Link className="brand" href="/"><span className="brand-mark"><Icon name="logo" size={22} /></span><span>biohostel<small>PANEL</small></span></Link>
+          <div className="hactions"><CurrencySelect /><ThemeToggle /><Link className="btn btn-ghost" href="/">← Ver sitio</Link></div>
         </div></header>
         <div className="page section" style={{ maxWidth: 520 }}>
           <p className="eyebrow">PANEL DE CONTROL</p>
@@ -238,7 +239,7 @@ export default function Panel() {
     <div>
       <div className="topbar">PANEL DE CONTROL · BIOHOSTEL.COM</div>
       <header className="header"><div className="page header-in">
-        <a className="brand" href="/"><span className="brand-mark"><Icon name="logo" size={22} /></span><span>biohostel<small>PANEL</small></span></a>
+        <Link className="brand" href="/"><span className="brand-mark"><Icon name="logo" size={22} /></span><span>biohostel<small>PANEL</small></span></Link>
         <nav className="nav">
           <button className={`pill ${tab === "resumen" ? "on" : ""}`} onClick={() => setTab("resumen")}>Resumen</button>
           <button className={`pill ${tab === "reservas" ? "on" : ""}`} onClick={() => setTab("reservas")}>Reservas + IA ({received.filter((r) => r.status === "confirmada").length})</button>
@@ -254,7 +255,7 @@ export default function Panel() {
             {userMenuOpen && (
               <div className="udropdown" onMouseLeave={() => setUserMenuOpen(false)}>
                 <div className="uhead">Hola, <strong>{user.name.split(" ")[0]}</strong> · plan {user.plan}</div>
-                <a href="/" onClick={() => setUserMenuOpen(false)}><Icon name="arrowLeft" size={16} /> Ver sitio</a>
+                <Link href="/" onClick={() => setUserMenuOpen(false)}><Icon name="arrowLeft" size={16} /> Ver sitio</Link>
                 <button onClick={() => { setUserMenuOpen(false); setTab("resumen"); }}><Icon name="card" size={16} /> Mi resumen</button>
                 <button onClick={() => { setUserMenuOpen(false); setTab("alojamientos"); }}><Icon name="bed" size={16} /> Mis alojamientos</button>
                 {user.role === "admin" && <a href="/admin" onClick={() => setUserMenuOpen(false)}><Icon name="verified" size={16} /> Admin maestro</a>}
@@ -263,7 +264,7 @@ export default function Panel() {
               </div>
             )}
           </div>
-          <a className="btn btn-ghost" href="/"><Icon name="arrowLeft" size={15} /> Ver sitio</a>
+          <Link className="btn btn-ghost" href="/"><Icon name="arrowLeft" size={15} /> Ver sitio</Link>
         </div>
       </div></header>
 
@@ -366,7 +367,7 @@ export default function Panel() {
                 <div className="row" style={{ marginTop: 12, gap: 12 }}>
                   <div className="field" style={{ flex: 1 }}><label>Color principal</label><input type="color" value={fTheme.primary} onChange={(e) => setFTheme({ ...fTheme!, primary: e.target.value })} /></div>
                   <div className="field" style={{ flex: 1 }}><label>Color acento</label><input type="color" value={fTheme.accent} onChange={(e) => setFTheme({ ...fTheme!, accent: e.target.value })} /></div>
-                  <div className="field"><label>Preset</label><select value={fTheme.preset} onChange={(e) => setFTheme({ ...fTheme!, preset: e.target.value as any })}><option value="selva">Selva</option><option value="mar">Mar</option><option value="colonial">Colonial</option><option value="urbano">Urbano</option><option value="minimal">Minimal</option></select></div>
+                  <div className="field"><label>Preset</label><select value={fTheme.preset} onChange={(e) => setFTheme({ ...fTheme!, preset: e.target.value as ListingTheme["preset"] })}><option value="selva">Selva</option><option value="mar">Mar</option><option value="colonial">Colonial</option><option value="urbano">Urbano</option><option value="minimal">Minimal</option></select></div>
                   <div className="field"><label>Tipografía</label><select value={fTheme.font} onChange={(e) => setFTheme({ ...fTheme!, font: e.target.value as "serif" | "sans" })}><option value="serif">Serif (elegante)</option><option value="sans">Sans (moderna)</option></select></div>
                 </div>
                 <div className="field" style={{ marginTop: 12 }}><label>Justificación IA</label><textarea rows={2} value={fTheme.rationale} onChange={(e) => setFTheme({ ...fTheme!, rationale: e.target.value })} /></div>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ThemeToggle } from "../theme-toggle";
 import { CurrencySelect } from "../currency-select";
@@ -313,8 +314,8 @@ export default function Admin() {
       <div>
         <div className="topbar">MODO MAESTRO · ACCESO RESTRINGIDO</div>
         <header className="header"><div className="page header-in">
-          <a className="brand" href="/"><span className="brand-mark"><Icon name="logo" size={22} /></span><span>biohostel<small>ADMIN</small></span></a>
-          <div className="hactions"><ThemeToggle /><a className="btn btn-ghost" href="/">← Ver sitio</a></div>
+          <Link className="brand" href="/"><span className="brand-mark"><Icon name="logo" size={22} /></span><span>biohostel<small>ADMIN</small></span></Link>
+          <div className="hactions"><ThemeToggle /><Link className="btn btn-ghost" href="/">← Ver sitio</Link></div>
         </div></header>
         <div className="page section" style={{ maxWidth: 520 }}>
           <p className="eyebrow">SOLO ADMINISTRADOR MAESTRO</p>
@@ -332,7 +333,7 @@ export default function Admin() {
     <div>
       <div className="topbar">MODO MAESTRO · {gate.me?.name.toUpperCase()} · ACCESO TOTAL</div>
       <header className="header"><div className="page header-in">
-        <a className="brand" href="/"><span className="brand-mark"><Icon name="logo" size={22} /></span><span>biohostel<small>ADMIN</small></span></a>
+        <Link className="brand" href="/"><span className="brand-mark"><Icon name="logo" size={22} /></span><span>biohostel<small>ADMIN</small></span></Link>
         <nav className="nav">
           {["resumen", "usuarios", "alojamientos", "reservas", "solicitudes", "publicidad", "ia", "comisiones"].map((t) => (
             <button key={t} className={`pill ${tab === t ? "on" : ""}`} onClick={() => setTab(t)} style={{ textTransform: "capitalize" }}>{t}</button>
