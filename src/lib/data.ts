@@ -76,7 +76,7 @@ export type ListingTheme = {
   primary: string;
   accent: string;
   preset: "selva" | "mar" | "colonial" | "urbano" | "minimal";
-  font: "serif" | "sans";
+  font: "sans";
   rationale: string;
 };
 
@@ -96,6 +96,17 @@ export type Listing = {
   descripcion: string;
   amenidades: string[];
   politicas: string;
+  // Phase 1: Campos críticos de hospitalidad
+  checkIn: string;
+  checkOut: string;
+  cancellationPolicy: string;
+  houseRules: string[];
+  minStay: number;
+  maxStay: number;
+  breakfastIncluded: boolean;
+  direccion?: string;
+  lat?: number;
+  lng?: number;
   anfitrion: { nombre: string; plan: PlanId; verificado: boolean; avatar: string; seguidores: number };
   fechasOcupadasBooking: string[];
   fechasOcupadasAirbnb: string[];
@@ -124,6 +135,16 @@ export const LISTINGS: Listing[] = [
     descripcion:
       "Cabaña ecológica entre 400 plantas de café y bosque nativo, a 10 min de Nocaima. Pileta natural, yoga y tour café-cacao. Ideal para nómadas y voluntarios.",
     amenidades: ["Wifi fibra", "Pileta natural", "Tour café", "Yoga deck", "Desayuno finca"],
+    direccion: "Vereda La Cabaña, Nocaima, Cundinamarca",
+    lat: 4.7691,
+    lng: -74.2341,
+    checkIn: "15:00",
+    checkOut: "12:00",
+    cancellationPolicy: "Cancelación gratuita hasta 48h antes del check-in. Después se cobra el 50% de la primera noche.",
+    houseRules: ["No fumar en áreas comunes", "Mascotas bajo consulta", "Silencio después de las 22:00"],
+    minStay: 1,
+    maxStay: 30,
+    breakfastIncluded: true,
     politicas: "Check-in 15:00 · Check-out 12:00 · Cancelación gratis 48h · No fumadores.",
     anfitrion: { nombre: "Tropical Biohostel", plan: "premium", verificado: true, avatar: "TB", seguidores: 15200 },
     fechasOcupadasBooking: ["2026-10-20", "2026-10-21", "2026-11-02"],
@@ -148,6 +169,16 @@ export const LISTINGS: Listing[] = [
     ],
     descripcion: "Loft amoblado con huerto urbano en Chapinero. Contrato mensual flexible, ideal voluntariado largo. Incluye servicios.",
     amenidades: ["Cocina equipada", "Huerto", "Lavandería", "Pet friendly"],
+    direccion: "Cra 7 # 62-140, Chapinero, Bogotá",
+    lat: 4.6596,
+    lng: -74.0569,
+    checkIn: "14:00",
+    checkOut: "11:00",
+    cancellationPolicy: "Cancelación gratuita hasta 7 días antes. Después se cobra el 100% de la primera semana.",
+    houseRules: ["Mascotas aceptadas con depósito adicional", "No fiestas después de las 23:00", "Respeto a espacios de coworking"],
+    minStay: 30,
+    maxStay: 365,
+    breakfastIncluded: false,
     politicas: "Estancia mínima 30 días · Depósito 1 mes · Contrato digital.",
     anfitrion: { nombre: "Lucía Méndez", plan: "premium", verificado: true, avatar: "LM", seguidores: 8900 },
     fechasOcupadasBooking: [],
@@ -171,6 +202,16 @@ export const LISTINGS: Listing[] = [
     ],
     descripcion: "Cabaña de bambú con paneles solares, ducha exterior y hamacas frente al Tayrona. Experiencia premium cero plásticos.",
     amenidades: ["Playa privada", "Paneles solares", "Yoga deck", "Tour Tayrona"],
+    direccion: "Km 15 vía Palomino, Santa Marta, Magdalena",
+    lat: 11.2417,
+    lng: -74.0927,
+    checkIn: "14:00",
+    checkOut: "11:00",
+    cancellationPolicy: "Cancelación flexible hasta 7 días antes. Reembolso del 80%.",
+    houseRules: ["Cero plásticos de un solo uso", "No fogatas sin supervisión", "Respeto a áreas de conservación"],
+    minStay: 2,
+    maxStay: 14,
+    breakfastIncluded: true,
     politicas: "Check-in 14:00 · Cancelación flexible 7 días · Capacidad 4.",
     anfitrion: { nombre: "Selva Viva Tayrona", plan: "premium", verificado: true, avatar: "SV", seguidores: 12400 },
     fechasOcupadasBooking: ["2026-10-18", "2026-10-19"],
@@ -191,6 +232,16 @@ export const LISTINGS: Listing[] = [
     galeria: ["https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?w=800&q=80"],
     descripcion: "Habitación privada en casa cowork con terraza en Laureles. Plan gratuito del anfitrión: descripción corta y 1 foto.",
     amenidades: ["Wifi 500mb", "Escritorio", "Cocina compartida"],
+    direccion: "Cra 78A # 42-150, Laureles, Medellín",
+    lat: 6.2442,
+    lng: -75.5812,
+    checkIn: "15:00",
+    checkOut: "12:00",
+    cancellationPolicy: "Cancelación gratuita hasta 24h antes.",
+    houseRules: ["Espacio de trabajo compartido", "Silencio en horas de oficina", "Visitantes solo en áreas comunes"],
+    minStay: 1,
+    maxStay: 7,
+    breakfastIncluded: false,
     politicas: "Política básica plan gratuito · Cancelación 24h.",
     anfitrion: { nombre: "Host Paisa", plan: "gratuito", verificado: false, avatar: "HP", seguidores: 340 },
     fechasOcupadasBooking: [],
@@ -212,11 +263,21 @@ export const LISTINGS: Listing[] = [
     galeria: ["https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80"],
     descripcion: "Casa colonial amoblada para subarrendar por meses en Getsemaní. Patio con hamacas, ideal teletrabajo y voluntarios.",
     amenidades: ["2 hab", "Wifi", "Patio hamacas", "Aire acondicionado"],
+    direccion: "Calle del Arzobispo, Getsemaní, Cartagena",
+    lat: 10.4231,
+    lng: -75.5427,
+    checkIn: "15:00",
+    checkOut: "11:00",
+    cancellationPolicy: "Cancelación gratuita hasta 14 días antes. Depósito reembolsable.",
+    houseRules: ["Respeto al patrimonio colonial", "No fumar dentro de la casa", "Mascotas pequeñas bajo consulta"],
+    minStay: 30,
+    maxStay: 180,
+    breakfastIncluded: false,
     politicas: "Mínimo 1 mes · Servicios incluidos · Se acepta voluntariado parcial.",
     anfitrion: { nombre: "Andrés Ruiz", plan: "corporativo", verificado: true, avatar: "AR", seguidores: 1200 },
     fechasOcupadasBooking: ["2026-10-28"],
     fechasOcupadasAirbnb: ["2026-10-28", "2026-10-29"],
-    theme: { primary: "#92400e", accent: "#fcd34d", preset: "colonial", font: "serif", rationale: "Colonial: dorado ámbar con acento mostaza, serif elegante para evocar historia" },
+    theme: { primary: "#92400e", accent: "#fcd34d", preset: "colonial", font: "sans", rationale: "Colonial: dorado ámbar con acento mostaza, sans moderna de alto contraste" },
   },
   {
     id: "bio-salento-06",
@@ -232,6 +293,16 @@ export const LISTINGS: Listing[] = [
     galeria: ["https://images.unsplash.com/photo-1537225228614-56cc3556d7ed?w=800&q=80"],
     descripcion: "Dormitorio 6 camas con vista al valle del Cocora. Desayuno campesino con café de origen incluido.",
     amenidades: ["Desayuno", "Lockers", "Tour Cocora", "Agua caliente"],
+    direccion: "Vereda El Encanto, Salento, Quindío",
+    lat: 4.6514,
+    lng: -75.5503,
+    checkIn: "13:00",
+    checkOut: "10:00",
+    cancellationPolicy: "Cancelación gratuita hasta 48h antes.",
+    houseRules: ["Silencio después de las 22:00", "Cocina compartida: limpia después de usar", "No alcohol en áreas comunes"],
+    minStay: 1,
+    maxStay: 14,
+    breakfastIncluded: true,
     politicas: "Check-in 13:00 · Silencio 22:00 · Cancelación 48h.",
     anfitrion: { nombre: "Casa Cocora", plan: "gratuito", verificado: true, avatar: "CC", seguidores: 6700 },
     fechasOcupadasBooking: [],
@@ -241,6 +312,18 @@ export const LISTINGS: Listing[] = [
 ];
 
 export type Ad = { empresa: string; categoria: string; titulo: string; texto: string; color: string; image?: string };
+
+export type StoredReview = {
+  id: string;
+  listingId: string;
+  userId: string;
+  userName: string;
+  role: "user" | "admin" | "guest";
+  rating: number;
+  text: string;
+  hostResponse?: { text: string; at: string };
+  createdAt: string;
+};
 
 export const ADS: Ad[] = [
   { empresa: "TechStay", categoria: "Tecnología", titulo: "Cerraduras inteligentes -20%", texto: "Check-in sin llaves para tu hostel.", color: "#0ea5e9" },

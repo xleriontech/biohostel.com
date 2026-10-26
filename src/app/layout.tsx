@@ -1,21 +1,54 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
+import "./globals.modern.css";
+import { store } from "@/lib/store";
+import { DEFAULT_SITE_SETTINGS, siteThemeCss, type SiteSettings } from "@/lib/site-settings";
+import { SiteSettingsProvider } from "./site-settings-context";
 
-export const metadata: Metadata = {
-  title: "BioHostel.com · Reserva hostels y subarriendos",
-  description:
-    "El booking verde: reservas por noche y subarriendos mensuales con IA que sincroniza Booking y Airbnb, perfiles sociales y planes para anfitriones.",
-};
+export const dynamic = "force-dynamic";
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+async function getSettings(): Promise<SiteSettings> {
+  try {
+    return await store.siteSettings();
+  } catch {
+    return DEFAULT_SITE_SETTINGS;
+  }
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSettings();
+  return {
+    title: settings.seo.title,
+    description: settings.seo.description,
+    openGraph: {
+      title: settings.seo.title,
+      description: settings.seo.description,
+      siteName: `${settings.brand.name}${settings.brand.suffix}`,
+      ...(settings.seo.ogImage ? { images: [{ url: settings.seo.ogImage }] } : {}),
+    },
+    twitter: {
+      card: settings.seo.ogImage ? "summary_large_image" : "summary",
+      title: settings.seo.title,
+      description: settings.seo.description,
+      ...(settings.seo.ogImage ? { images: [settings.seo.ogImage] } : {}),
+    },
+  };
+}
+
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const settings = await getSettings();
+  const themeScript = `(function(){try{var t=localStorage.getItem("bio-theme");document.documentElement.dataset.theme=(t==="dark"||t==="light")?t:"${settings.design.defaultTheme}";}catch(e){document.documentElement.dataset.theme="${settings.design.defaultTheme}";}})();`;
+
   return (
     <html lang="es" suppressHydrationWarning>
-      <head />
+      <head>
+        <style id="site-theme" dangerouslySetInnerHTML={{ __html: siteThemeCss(settings) }} />
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body suppressHydrationWarning>
-      <script suppressHydrationWarning id="theme-init" dangerouslySetInnerHTML={{ __html: `try{document.documentElement.dataset.theme=localStorage.getItem("bio-theme")||"light"}catch(e){}` }} />
-      {children}
-    </body>
+        <SiteSettingsProvider settings={settings}>{children}</SiteSettingsProvider>
+      </body>
     </html>
   );
 }

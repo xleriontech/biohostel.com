@@ -165,8 +165,7 @@ function extraerEstilo(html: string, textoPlano: string) {
     if (!esNeutro(hex)) freq.set(hex, (freq.get(hex) ?? 0) + 1);
   }
   const ranked = [...freq.entries()].sort((a, b) => b[1] - a[1]).map(([h]) => h);
-  const fonts = `${css} ${inline}`.toLowerCase();
-  const font: "serif" | "sans" = /georgia|playfair|merriweather|garamond|times|serif/.test(fonts) ? "serif" : "sans";
+  const font = "sans" as const;
   const vibe = VIBES.find((v) => v.kws.test(textoPlano)) ?? { preset: "selva" as const, label: "eco-natural" };
   const defaults: Record<string, [string, string]> = {
     selva: ["#1d4a2c", "#bef264"],
@@ -183,7 +182,7 @@ function extraerEstilo(html: string, textoPlano: string) {
     accent,
     preset: vibe.preset,
     font,
-    rationale: `Detecté estilo ${vibe.label}: primario ${primary} (de tu web) + acento ${accent}, tipografía ${font === "serif" ? "con serifas clásicas" : "moderna sin serifas"}. Puedes ajustarlo abajo.`,
+    rationale: `Detecté estilo ${vibe.label}: primario ${primary} (de tu web) + acento ${accent}, tipografía moderna sin serifas. Puedes ajustarlo abajo.`,
   };
 }
 

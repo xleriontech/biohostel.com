@@ -2,9 +2,17 @@
 
 import { useState, useEffect } from "react";
 
-export default function ReservaForm({ listingId }: { listingId: string }) {
-  const [checkIn, setCheckIn] = useState("2027-07-01");
-  const [checkOut, setCheckOut] = useState("2027-07-03");
+export default function ReservaForm({
+  listingId,
+  defaultCheckIn,
+  defaultCheckOut,
+}: {
+  listingId: string;
+  defaultCheckIn: string;
+  defaultCheckOut: string;
+}) {
+  const [checkIn, setCheckIn] = useState(defaultCheckIn);
+  const [checkOut, setCheckOut] = useState(defaultCheckOut);
   const [guests, setGuests] = useState("2");
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");

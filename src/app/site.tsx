@@ -9,6 +9,8 @@ import { AssistantWidget } from "./assistant-widget";
 import { AuthModal } from "./auth-modal";
 import { Icon, type IconName } from "./icons";
 import { useCurrency } from "@/lib/currency";
+import { Brand } from "./brand";
+import { useSiteSettings } from "./site-settings-context";
 
 type User = { id: string; name: string; email: string; plan: PlanId; role?: string; favorites: string[]; follows: string[] };
 type Booking = { id: string; code: string; listingTitle: string; checkIn: string; checkOut: string; guests: number; base: number; commission: number; total: number; status: string; aiReport: string; createdAt: string };
@@ -33,6 +35,18 @@ const PACKS = PAQUETES;
 function fmtMiles(n: number) {
   // Formato determinístico (evita hydration mismatch por locale del server vs cliente)
   return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+function HeroTitle({ title, highlight }: { title: string; highlight: string }) {
+  const idx = highlight ? title.indexOf(highlight) : -1;
+  if (idx < 0) return <>{title}</>;
+  return (
+    <>
+      {title.slice(0, idx)}
+      <em>{highlight}</em>
+      {title.slice(idx + highlight.length)}
+    </>
+  );
 }
 
 
@@ -64,21 +78,21 @@ function CardImg({ listing: l, fav, onFav }: { listing: Listing; fav: boolean; o
         </div>
         <button className={`lheart ${fav ? "on" : ""}`} onClick={onFav} aria-label="Guardar en favoritos"><Icon name="heart" size={18} filled={fav} /></button>
       </div>
-      <div className="loverlay" style={theme?.accent ? { background: `linear-gradient(180deg, transparent, ${theme.accent}CC)` } : {}}>
+      <div className="loverlay">
         <span className="leyebrow">{l.categoria.toUpperCase()} · {l.ciudad.toUpperCase()}</span>
         <h3>{l.titulo}</h3>
-        <div className="lmeta"><span className="lrating" style={theme?.accent ? { background: theme.accent, color: '#fff' } : {}}><Icon name="star" size={12} filled /> {l.rating}</span><span>{l.resenas} reseñas</span><span>·</span><span><Icon name="users" size={13} /> {l.huespedes}</span></div>
+        <div className="lmeta"><span className="lrating"><Icon name="star" size={12} filled /> {l.rating}</span><span>{l.resenas} reseñas</span><span>·</span><span><Icon name="users" size={13} /> {l.huespedes}</span></div>
       </div>
     </div>
   );
 }
 
-export default function Site() {
+export default function Site({ defaultCheckIn, defaultCheckOut }: { defaultCheckIn: string; defaultCheckOut: string }) {
   const [q, setQ] = useState("");
   const [ciudad, setCiudad] = useState("Todas");
   const [tipo, setTipo] = useState<"todos" | "reserva" | "subarriendo">("todos");
-  const [checkIn, setCheckIn] = useState("2026-10-22");
-  const [checkOut, setCheckOut] = useState("2026-10-24");
+  const [checkIn, setCheckIn] = useState(defaultCheckIn);
+  const [checkOut, setCheckOut] = useState(defaultCheckOut);
   const [selected, setSelected] = useState<Listing | null>(null);
   const [aiMsg, setAiMsg] = useState("");
   const [aiOk, setAiOk] = useState<boolean | null>(null);
@@ -101,6 +115,7 @@ export default function Site() {
   const [chatLoading, setChatLoading] = useState(false);
 
   const router = useRouter();
+  const settings = useSiteSettings();
 
   function openListing(l: Listing) {
     const slug = l.slug || (l.id || l.titulo).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "alojamiento";
@@ -145,6 +160,19 @@ export default function Site() {
   });
   const favs = user?.favorites ?? [];
   const seguidos = user?.follows ?? [];
+  const navItems = settings.nav.filter((item) => {
+    if (item.href === "#planes" && !settings.modules.plans) return false;
+    if (item.href === "#perfiles" && !settings.modules.profiles) return false;
+    if (
+      item.href === "#publicidad" &&
+      !settings.modules.publicAds &&
+      !settings.modules.sponsors &&
+      !settings.modules.packs
+    ) {
+      return false;
+    }
+    return true;
+  });
 
   function notify(m: string) {
     setToast(m);
@@ -236,13 +264,11 @@ export default function Site() {
     } catch { notify("Error de conexión al reservar."); } finally { setReserving(false); }
   }
 
-  async function elegirPlan(id: PlanId) {
+  function elegirPlan(id: PlanId) {
     if (needLogin()) return;
-    const res = await fetch("/api/auth/plan", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: id }) });
-    const d = await res.json();
-    if (!res.ok) { notify(d.error ?? "No se pudo cambiar el plan."); return; }
-    setUser(d.user);
-    notify(`Plan ${d.user.plan} activado. Comisión ahora ${Math.round(d.rate * 100)}%.`);
+    if (user?.plan === id) return;
+    const p = PLANS.find((x) => x.id === id);
+    setLead({ tipo: "plan", titulo: `Solicitud de plan ${p?.nombre ?? id}`, detalle: id });
   }
 
   async function openBookings() {
@@ -265,7 +291,7 @@ export default function Site() {
     if (!lead) return;
     setErr(""); setLoading(true);
     try {
-      const res = await fetch("/api/leads", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tipo: lead.tipo, nombre, email, mensaje, detalle: `${lead.titulo}` }) });
+      const res = await fetch("/api/leads", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tipo: lead.tipo, nombre, email, mensaje, detalle: lead.detalle || lead.titulo }) });
       const d = await res.json();
       if (!res.ok) { setErr(d.error ?? "No se pudo enviar."); return; }
       setLead(null);
@@ -275,20 +301,18 @@ export default function Site() {
 
   return (
     <div>
-      <div className="topbar">BIOHOSTEL.COM · 1 RESERVA = 1 ÁRBOL · SINCRONIZADO CON BOOKING + AIRBNB</div>
+      <div className="topbar">{settings.announcement}</div>
       <header className="header">
         <div className="page header-in">
-          <a className="brand" href="#top"><span className="brand-mark"><Icon name="logo" size={22} /></span><span>biohostel<small>.COM</small></span></a>
+          <Brand href="#top" />
           <nav className="nav" aria-label="Secciones">
-            <a href="#explorar">Explorar</a>
-            <a href="#subarriendos">Subarriendos</a>
-            <a href="#planes">Planes</a>
-            <a href="#perfiles">Comunidad</a>
-            <a href="#publicidad">Proveedores</a>
+            {navItems.map((item) => (
+              <a key={`${item.label}-${item.href}`} href={item.href}>{item.label}</a>
+            ))}
           </nav>
           <div className="hactions">
-            <span className="hide-mobile"><CurrencySelect /></span>
-            <span className="hide-mobile"><ThemeToggle /></span>
+            {settings.modules.currency && <span className="hide-mobile"><CurrencySelect /></span>}
+            {settings.modules.themeToggle && <span className="hide-mobile"><ThemeToggle /></span>}
             <div className="usermenu">
               <button className="btn btn-ghost" onClick={() => setMenuOpen((o) => !o)} aria-label="Menú" aria-expanded={menuOpen} style={{ borderRadius: 999, padding: "9px 12px" }}>
                 <Icon name="menu" size={18} /><Icon name="user" size={20} />
@@ -296,17 +320,21 @@ export default function Site() {
               {menuOpen && (
                 <div className="udropdown" onMouseLeave={() => setMenuOpen(false)}>
                   {user && <div className="uhead">Hola, <strong>{user.name.split(" ")[0]}</strong> · plan {user.plan}</div>}
-                  <div className="only-mobile" style={{ padding: "4px 8px" }}>
-                    <div className="row" style={{ gap: 8 }}>
-                      <CurrencySelect />
-                      <ThemeToggle />
+                  {(settings.modules.currency || settings.modules.themeToggle) && (
+                    <div className="only-mobile" style={{ padding: "4px 8px" }}>
+                      <div className="row" style={{ gap: 8 }}>
+                        {settings.modules.currency && <CurrencySelect />}
+                        {settings.modules.themeToggle && <ThemeToggle />}
+                      </div>
                     </div>
-                  </div>
+                  )}
                   <a href="#explorar" onClick={() => setMenuOpen(false)}><Icon name="search" size={16} /> Explorar</a>
                   <a href="#subarriendos" onClick={() => setMenuOpen(false)}><Icon name="home" size={16} /> Subarriendos</a>
-                  <a href="#planes" onClick={() => setMenuOpen(false)}><Icon name="card" size={16} /> Planes</a>
-                  <a href="#perfiles" onClick={() => setMenuOpen(false)}><Icon name="users" size={16} /> Comunidad</a>
-                  <a href="#publicidad" onClick={() => setMenuOpen(false)}><Icon name="eye" size={16} /> Proveedores</a>
+                  {settings.modules.plans && <a href="#planes" onClick={() => setMenuOpen(false)}><Icon name="card" size={16} /> Planes</a>}
+                  {settings.modules.profiles && <a href="#perfiles" onClick={() => setMenuOpen(false)}><Icon name="users" size={16} /> Comunidad</a>}
+                  {(settings.modules.publicAds || settings.modules.sponsors || settings.modules.packs) && (
+                    <a href="#publicidad" onClick={() => setMenuOpen(false)}><Icon name="eye" size={16} /> Proveedores</a>
+                  )}
                   <hr />
                   {user ? (
                     <>
@@ -326,12 +354,19 @@ export default function Site() {
         </div>
       </header>
 
-      <section className="hero" id="top">
+      <section className={`hero ${settings.hero.image ? "hero--image" : ""}`} id="top">
+        {settings.hero.image && (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="hero-bg" src={settings.hero.image} alt="" aria-hidden="true" />
+            <div className="hero-bg-shade" />
+          </>
+        )}
         <div className="page">
-          <p className="eyebrow">COMO BOOKING + AIRBNB, PERO VERDE</p>
-          <h1>Reserva hostels <em>y subarriendos</em> con IA que evita overbooking.</h1>
-          <p className="muted">Antes de cobrar, la IA verifica tus fechas en Booking y Airbnb. Si está ocupado, te sugiere otro día o lugar. Si está libre, reserva y bloquea las otras plataformas.</p>
-          <div className="searchcard">
+          <p className="eyebrow">{settings.hero.eyebrow}</p>
+          <h1><HeroTitle title={settings.hero.title} highlight={settings.hero.highlight} /></h1>
+          <p className="muted">{settings.hero.subtitle}</p>
+          <div className="searchcard" id="buscar">
             <input placeholder="¿A dónde vas? Ej. Nocaima, Cartagena…" value={q} onChange={(e) => setQ(e.target.value)} />
             <select value={ciudad} onChange={(e) => setCiudad(e.target.value)}>{ciudades.map((c) => <option key={c}>{c}</option>)}</select>
             <input type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} />
@@ -374,10 +409,11 @@ export default function Site() {
         </div>
       </section>
 
+      {settings.modules.plans && (
       <section className="section page" id="planes" style={{ background: "var(--paper)", borderRadius: 20, padding: 28 }}>
         <p className="eyebrow">PLANES PARA ANFITRIONES</p>
         <h2>Gratuito · Corporativo · Premium</h2>
-        <p className="muted">Simula tu comisión: elige tu plan y verás cuánto retiene la plataforma.</p>
+        <p className="muted">Simula tu comisión con el selector. La activación de un plan la aprueba el equipo tras el pago.</p>
         <div className="row" style={{ marginTop: 12 }}>
           {PLANS.map((p) => (
             <button key={p.id} className={`pill ${planActual === p.id ? "on" : ""}`} onClick={() => setPlanActual(p.id)}>{p.nombre}</button>
@@ -392,12 +428,14 @@ export default function Site() {
               <p><strong style={{ fontSize: 26 }}>{p.precioCOP === 0 ? "$0" : fmt(p.precioCOP)}</strong> <span className="muted">{p.periodo}</span></p>
               <p className="muted"><Icon name="eye" size={13} /> {p.limiteFotos} · {p.limiteDescripcion} · <Icon name="card" size={13} /> {Math.round((cfgRates?.[p.id] ?? p.comisionValor) * 100)}% por reserva</p>
               <ul>{p.features.map((f) => <li key={f}>{f}</li>)}</ul>
-              <button className="btn btn-dark" style={{ width: "100%", justifyContent: "center" }} onClick={() => elegirPlan(p.id)}>{user?.plan === p.id ? <><Icon name="check" size={14} /> Tu plan actual</> : `Elegir ${p.nombre}`}</button>
+              <button className="btn btn-dark" style={{ width: "100%", justifyContent: "center" }} disabled={user?.plan === p.id} onClick={() => elegirPlan(p.id)}>{user?.plan === p.id ? <><Icon name="check" size={14} /> Tu plan actual</> : `Solicitar ${p.nombre}`}</button>
             </div>
           ))}
         </div>
       </section>
+      )}
 
+      {settings.modules.profiles && (
       <section className="section page" id="perfiles">
         <p className="eyebrow">COMUNIDAD ESTILO LINKEDIN + FACEBOOK</p>
         <h2>Perfiles que generan confianza</h2>
@@ -420,48 +458,88 @@ export default function Site() {
           ))}
         </div>
       </section>
+      )}
 
+      {(settings.modules.publicAds || settings.modules.sponsors || settings.modules.packs) && (
       <section className="section page" id="publicidad">
-        <p className="eyebrow">PUBLICIDAD DE PROVEEDORES</p>
-        <h2>Tecnología · Colchones · Higiene · Energía</h2>
-        <div className="ads" style={{ marginTop: 14 }}>
-          {(adsLive ?? ADS).map((a) => (
-            <div key={a.empresa} className="ad" style={{ background: a.color, overflow: "hidden" }}>
-              {a.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={a.image} alt={a.empresa} style={{ width: "calc(100% + 32px)", height: 110, objectFit: "cover", margin: "-16px -16px 10px", display: "block" }} />
-              ) : null}
-              <small>{a.categoria.toUpperCase()}</small>
-              <strong style={{ display: "block", margin: "6px 0" }}>{a.empresa}</strong>
-              <span style={{ fontSize: 13 }}>{a.titulo} — {a.texto}</span>
-              <div style={{ marginTop: 10 }}><button className="btn btn-ghost" onClick={() => setLead({ tipo: "publicidad", titulo: `Espacio publicitario (${a.categoria})`, detalle: a.empresa })}>Anunciarme</button></div>
+        {settings.modules.publicAds ? (
+          <>
+            <p className="eyebrow">PUBLICIDAD DE PROVEEDORES</p>
+            <h2>Tecnología · Colchones · Higiene · Energía</h2>
+            <div className="ads" style={{ marginTop: 14 }}>
+              {(adsLive ?? ADS).map((a) => (
+                <div key={a.empresa} className="ad" style={{ background: a.color, overflow: "hidden" }}>
+                  {a.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={a.image} alt={a.empresa} style={{ width: "calc(100% + 32px)", height: 110, objectFit: "cover", margin: "-16px -16px 10px", display: "block" }} />
+                  ) : null}
+                  <small>{a.categoria.toUpperCase()}</small>
+                  <strong style={{ display: "block", margin: "6px 0" }}>{a.empresa}</strong>
+                  <span style={{ fontSize: 13 }}>{a.titulo} — {a.texto}</span>
+                  <div style={{ marginTop: 10 }}><button className="btn btn-ghost" onClick={() => setLead({ tipo: "publicidad", titulo: `Espacio publicitario (${a.categoria})`, detalle: a.empresa })}>Anunciarme</button></div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <h3 style={{ marginTop: 26 }}>Sponsors · Fundaciones</h3>
-        <div className="sponsors">
-          {SPONSORS.map((s) => (
-            <div key={s.nombre} className="sponsor"><strong><Icon name={s.logo as IconName} size={16} /> {s.nombre}</strong><br /><span className="muted">{s.aporte}</span></div>
-          ))}
-          <div className="sponsor"><strong>+ Tu fundación aquí</strong><br /><span className="muted">Visibilidad en 6 países</span><br /><button className="btn btn-ghost" style={{ marginTop: 8 }} onClick={() => setLead({ tipo: "sponsor", titulo: "Alta de fundación sponsor", detalle: "" })}>Ser sponsor</button></div>
-        </div>
-        <h3 style={{ marginTop: 26 }}>Paquetes</h3>
-        <div className="packs">
-          {PACKS.map((p) => (
-            <div key={p.id} className="pack">
-              <div style={{ color: "var(--lime)" }}><Icon name={p.icono as IconName} size={30} /></div>
-              <h3>{p.nombre}</h3>
-              <strong style={{ color: "var(--lime)" }}>{fmt(p.precioCOP)} {p.precioNota}</strong>
-              <p className="muted" style={{ color: "#cfe8cf" }}>{p.desc}</p>
-              <button className="btn btn-green" onClick={() => setLead({ tipo: "paquete", titulo: `Paquete ${p.nombre} (${fmt(p.precioCOP)})`, detalle: p.id })}>Quiero este</button>
+          </>
+        ) : (
+          <>
+            <p className="eyebrow">ALIADOS Y PAQUETES</p>
+            <h2>Comunidad BioHostel</h2>
+          </>
+        )}
+        {settings.modules.sponsors && (
+          <>
+            <h3 style={{ marginTop: 26 }}>Sponsors · Fundaciones</h3>
+            <div className="sponsors">
+              {SPONSORS.map((s) => (
+                <div key={s.nombre} className="sponsor"><strong><Icon name={s.logo as IconName} size={16} /> {s.nombre}</strong><br /><span className="muted">{s.aporte}</span></div>
+              ))}
+              <div className="sponsor"><strong>+ Tu fundación aquí</strong><br /><span className="muted">Visibilidad en 6 países</span><br /><button className="btn btn-ghost" style={{ marginTop: 8 }} onClick={() => setLead({ tipo: "sponsor", titulo: "Alta de fundación sponsor", detalle: "" })}>Ser sponsor</button></div>
             </div>
-          ))}
-        </div>
+          </>
+        )}
+        {settings.modules.packs && (
+          <>
+            <h3 style={{ marginTop: 26 }}>Paquetes</h3>
+            <div className="packs">
+              {PACKS.map((p) => (
+                <div key={p.id} className="pack">
+                  <div style={{ color: "var(--lime)" }}><Icon name={p.icono as IconName} size={30} /></div>
+                  <h3>{p.nombre}</h3>
+                  <strong style={{ color: "var(--lime)" }}>{fmt(p.precioCOP)} {p.precioNota}</strong>
+                  <p className="muted" style={{ color: "#cfe8cf" }}>{p.desc}</p>
+                  <button className="btn btn-green" onClick={() => setLead({ tipo: "paquete", titulo: `Paquete ${p.nombre} (${fmt(p.precioCOP)})`, detalle: p.id })}>Quiero este</button>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </section>
+      )}
 
       <footer className="footer">
-        <div className="page row" style={{ justifyContent: "space-between" }}>
-          <div><strong><Icon name="logo" size={16} /> biohostel.com</strong><p className="muted">Hecho en Colombia · <a href="/panel" style={{ textDecoration: "underline" }}>Panel anfitrión</a> · <a href="/admin" style={{ textDecoration: "underline" }}>Admin maestro</a></p></div>
+        <div className="page" style={{ display: "flex", justifyContent: "space-between", gap: 24, flexWrap: "wrap" }}>
+          <div>
+            <strong>{settings.brand.name}{settings.brand.suffix}</strong>
+            <p className="muted">{settings.footer.text}</p>
+            {settings.footer.contactEmail && (
+              <p className="muted"><a href={`mailto:${settings.footer.contactEmail}`} style={{ textDecoration: "underline" }}>{settings.footer.contactEmail}</a></p>
+            )}
+            {settings.footer.links.length > 0 && (
+              <p className="muted" style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+                {settings.footer.links.map((item) => (
+                  <a key={`${item.label}-${item.href}`} href={item.href} style={{ textDecoration: "underline" }}>{item.label}</a>
+                ))}
+              </p>
+            )}
+            {settings.footer.socials.length > 0 && (
+              <p className="muted" style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+                {settings.footer.socials.map((item) => (
+                  <a key={item.label} href={item.url} target="_blank" rel="noreferrer" style={{ textDecoration: "underline" }}>{item.label}</a>
+                ))}
+              </p>
+            )}
+          </div>
           <div className="row"><a href="/panel" className="btn btn-green">Ir al panel</a></div>
         </div>
       </footer>
@@ -534,13 +612,15 @@ export default function Site() {
 
       {lead && <LeadModal titulo={lead.titulo} tipo={lead.tipo} user={user} onClose={() => setLead(null)} onSend={sendLead} />}
 
-      <AssistantWidget onOpen={(id) => {
-        const l = todas.find((x) => x.id === id);
-        if (l) {
-          document.getElementById("explorar")?.scrollIntoView({ behavior: "smooth" });
-          openListing(l);
-        } else notify("Ese alojamiento ya no está disponible.");
-      }} />
+      {settings.modules.assistant && (
+        <AssistantWidget onOpen={(id) => {
+          const l = todas.find((x) => x.id === id);
+          if (l) {
+            document.getElementById("explorar")?.scrollIntoView({ behavior: "smooth" });
+            openListing(l);
+          } else notify("Ese alojamiento ya no está disponible.");
+        }} />
+      )}
       {toast && <div className="toast">{toast}</div>}
     </div>
   );

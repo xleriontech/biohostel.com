@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     primary: String(b.theme.primary).slice(0, 20),
     accent: String(b.theme.accent ?? "#bef264").slice(0, 20),
     preset: ["selva", "mar", "colonial", "urbano", "minimal"].includes(b.theme.preset) ? b.theme.preset : "selva",
-    font: b.theme.font === "serif" ? "serif" as const : "sans" as const,
+    font: "sans" as const,
     rationale: String(b.theme.rationale ?? "").slice(0, 500),
   } : undefined;
   const nuevo = {
@@ -44,6 +44,9 @@ export async function POST(req: Request) {
     tipo: (b.tipo === "subarriendo" ? "subarriendo" : "reserva") as "reserva" | "subarriendo",
     categoria: b.tipo === "subarriendo" ? "Subarriendo" : String(b.categoria ?? "Hostel"),
     ciudad: String(b.ciudad ?? "Por definir").slice(0, 100),
+    direccion: String(b.direccion ?? "").slice(0, 200),
+    lat: b.lat ? Number(b.lat) : undefined,
+    lng: b.lng ? Number(b.lng) : undefined,
     precioNoche: Number(b.precioNoche) || 0,
     precioMes: b.precioMes ? Number(b.precioMes) : undefined,
     rating: 5.0,
@@ -54,6 +57,14 @@ export async function POST(req: Request) {
     descripcion: descripcion || "Sin descripción.",
     amenidades: Array.isArray(b.amenidades) ? b.amenidades : [],
     politicas: String(b.politicas ?? "Check-in 15:00 · Check-out 12:00 · Cancelación gratis 48h."),
+    // Phase 1: Campos críticos
+    checkIn: String(b.checkIn ?? "15:00").slice(0, 10),
+    checkOut: String(b.checkOut ?? "12:00").slice(0, 10),
+    cancellationPolicy: String(b.cancellationPolicy ?? "Cancelación gratuita hasta 48h antes del check-in.").slice(0, 500),
+    houseRules: Array.isArray(b.houseRules) ? b.houseRules.filter((r: unknown) => typeof r === "string").slice(0, 10) : [],
+    minStay: Number(b.minStay) || 1,
+    maxStay: Number(b.maxStay) || 30,
+    breakfastIncluded: b.breakfastIncluded === true,
     anfitrion: {
       nombre: me.name,
       plan: me.plan,

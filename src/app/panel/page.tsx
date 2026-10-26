@@ -6,7 +6,9 @@ import { ADS, PLANS, type Listing, type ListingTheme, type PlanId } from "@/lib/
 import { ThemeToggle } from "../theme-toggle";
 import { CurrencySelect } from "../currency-select";
 import { AuthModal } from "../auth-modal";
+import { Brand } from "../brand";
 import { Icon } from "../icons";
+import { useSiteSettings } from "../site-settings-context";
 import { useCurrency } from "@/lib/currency";
 
 type User = { id: string; name: string; email: string; plan: PlanId; role?: string; favorites: string[]; follows: string[] };
@@ -18,6 +20,7 @@ type ImportData = { titulo: string; descripcion: string; h1: string; imagenes: s
 
 
 export default function Panel() {
+  const settings = useSiteSettings();
   const [tab, setTab] = useState("resumen");
   const [user, setUser] = useState<User | null>(null);
   const [received, setReceived] = useState<Reservation[]>([]);
@@ -27,6 +30,7 @@ export default function Panel() {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [toast, setToast] = useState("");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [solicitudEnviada, setSolicitudEnviada] = useState("");
 
   // Importar
   const [importUrl, setImportUrl] = useState("https://tropicalbiohostel.pages.dev/");
@@ -41,7 +45,7 @@ export default function Panel() {
   const [fTipo, setFTipo] = useState<"reserva" | "subarriendo">("reserva");
   const [fHuespedes, setFHuespedes] = useState("2");
   const [selImgs, setSelImgs] = useState<string[]>([]);
-  const [fTheme, setFTheme] = useState<{ primary: string; accent: string; preset: "selva" | "mar" | "colonial" | "urbano" | "minimal"; font: "serif" | "sans"; rationale: string } | null>(null);
+  const [fTheme, setFTheme] = useState<{ primary: string; accent: string; preset: "selva" | "mar" | "colonial" | "urbano" | "minimal"; font: "sans"; rationale: string } | null>(null);
   // Canales
   const [chPlat, setChPlat] = useState("Booking");
   const [chCuenta, setChCuenta] = useState("");
@@ -129,13 +133,31 @@ export default function Panel() {
 
   const plan = user?.plan ?? "gratuito";
   const limite = plan === "gratuito" ? { fotos: 5, desc: 300, alojamientos: 1 } : plan === "corporativo" ? { fotos: "∞", desc: "∞", alojamientos: 20 } : { fotos: "∞+video", desc: "∞+SEO", alojamientos: "∞" };
+  const solicitudesPlan = useMemo(
+    () => new Set(leads.filter((l) => l.tipo === "plan" && user && l.email.toLowerCase() === user.email.toLowerCase()).map((l) => l.detalle)),
+    [leads, user],
+  );
 
-  async function cambiarPlan(p: PlanId) {
-    const res = await fetch("/api/auth/plan", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan: p }) });
+  async function solicitarPlan(p: PlanId) {
+    if (!user || p === plan) return;
+    if (solicitudEnviada === p || solicitudesPlan.has(p)) { notify("Ya enviaste una solicitud para este plan."); return; }
+    const target = PLANS.find((x) => x.id === p);
+    const res = await fetch("/api/leads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tipo: "plan",
+        nombre: user.name,
+        email: user.email,
+        detalle: p,
+        mensaje: `Solicito el cambio al plan ${target?.nombre ?? p}. Mi plan actual es ${plan}.`,
+      }),
+    });
     const d = await res.json();
-    if (!res.ok) { notify(d.error ?? "Error."); return; }
-    setUser(d.user);
-    notify(`Plan ${d.user.plan} activado · comisión ${Math.round(d.rate * 100)}%.`);
+    if (!res.ok) { notify(d.error ?? "No se pudo enviar la solicitud."); return; }
+    setSolicitudEnviada(p);
+    notify(`Solicitud al plan ${target?.nombre ?? p} enviada. Te contactamos para coordinar el pago.`);
+    refresh();
   }
 
   async function importar() {
@@ -215,9 +237,9 @@ export default function Panel() {
   if (user === null) {
     return (
       <div>
-        <div className="topbar">PANEL DE CONTROL · BIOHOSTEL.COM</div>
+        <div className="topbar">PANEL DE CONTROL · {settings.brand.name.toUpperCase()}{settings.brand.suffix}</div>
         <header className="header"><div className="page header-in">
-          <Link className="brand" href="/"><span className="brand-mark"><Icon name="logo" size={22} /></span><span>biohostel<small>PANEL</small></span></Link>
+          <Brand small="PANEL" />
           <div className="hactions"><CurrencySelect /><ThemeToggle /><Link className="btn btn-ghost" href="/">← Ver sitio</Link></div>
         </div></header>
         <div className="page section" style={{ maxWidth: 520 }}>
@@ -237,9 +259,9 @@ export default function Panel() {
 
   return (
     <div>
-      <div className="topbar">PANEL DE CONTROL · BIOHOSTEL.COM</div>
+      <div className="topbar">PANEL DE CONTROL · {settings.brand.name.toUpperCase()}{settings.brand.suffix}</div>
       <header className="header"><div className="page header-in">
-        <Link className="brand" href="/"><span className="brand-mark"><Icon name="logo" size={22} /></span><span>biohostel<small>PANEL</small></span></Link>
+        <Brand small="PANEL" />
         <nav className="nav">
           <button className={`pill ${tab === "resumen" ? "on" : ""}`} onClick={() => setTab("resumen")}>Resumen</button>
           <button className={`pill ${tab === "reservas" ? "on" : ""}`} onClick={() => setTab("reservas")}>Reservas + IA ({received.filter((r) => r.status === "confirmada").length})</button>
@@ -273,8 +295,13 @@ export default function Panel() {
         <h2>Tu centro de mando</h2>
         <p className="muted"><Icon name="globe" size={14} /> Cifras en {currencyCode} · {ratesLive ? `tasa del día ${ratesDate}` : "tasa de referencia"}</p>
         <div className="row" style={{ margin: "12px 0" }}>
-          <span className="muted">Cambiar plan:</span>
-          {PLANS.map((p) => <button key={p.id} className={`pill ${plan === p.id ? "on" : ""}`} onClick={() => cambiarPlan(p.id)}>{p.nombre} · {p.comision}</button>)}
+          <span className="muted">Plan actual:</span>
+          <span className="pill on">{PLANS.find((p) => p.id === plan)?.nombre ?? plan}</span>
+          <span className="muted">Los cambios requieren aprobación:</span>
+          {PLANS.filter((p) => p.id !== plan).map((p) => {
+            const pedido = solicitudEnviada === p.id || solicitudesPlan.has(p.id);
+            return <button key={p.id} className="pill" disabled={pedido} onClick={() => solicitarPlan(p.id)}>{pedido ? `${p.nombre} · solicitado` : `Solicitar ${p.nombre} · ${p.comision}`}</button>;
+          })}
         </div>
 
         {tab === "resumen" && (
@@ -368,7 +395,6 @@ export default function Panel() {
                   <div className="field" style={{ flex: 1 }}><label>Color principal</label><input type="color" value={fTheme.primary} onChange={(e) => setFTheme({ ...fTheme!, primary: e.target.value })} /></div>
                   <div className="field" style={{ flex: 1 }}><label>Color acento</label><input type="color" value={fTheme.accent} onChange={(e) => setFTheme({ ...fTheme!, accent: e.target.value })} /></div>
                   <div className="field"><label>Preset</label><select value={fTheme.preset} onChange={(e) => setFTheme({ ...fTheme!, preset: e.target.value as ListingTheme["preset"] })}><option value="selva">Selva</option><option value="mar">Mar</option><option value="colonial">Colonial</option><option value="urbano">Urbano</option><option value="minimal">Minimal</option></select></div>
-                  <div className="field"><label>Tipografía</label><select value={fTheme.font} onChange={(e) => setFTheme({ ...fTheme!, font: e.target.value as "serif" | "sans" })}><option value="serif">Serif (elegante)</option><option value="sans">Sans (moderna)</option></select></div>
                 </div>
                 <div className="field" style={{ marginTop: 12 }}><label>Justificación IA</label><textarea rows={2} value={fTheme.rationale} onChange={(e) => setFTheme({ ...fTheme!, rationale: e.target.value })} /></div>
                 <h4 style={{ marginTop: 16 }}>Vista previa</h4>

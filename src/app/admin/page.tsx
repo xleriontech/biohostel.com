@@ -5,9 +5,11 @@ import { useEffect, useMemo, useState } from "react";
 import { ThemeToggle } from "../theme-toggle";
 import { CurrencySelect } from "../currency-select";
 import { AuthModal } from "../auth-modal";
+import { Brand } from "../brand";
 import { Icon } from "../icons";
 import { useCurrency } from "@/lib/currency";
 import { BarChart, DonutChart, LineChart, downloadCSV, downloadJSON } from "./charts";
+import { SiteSettingsPanel } from "./site-settings";
 
 type AdminUser = { id: string; name: string; email: string; plan: string; role: string; banned?: boolean; favorites: string[]; follows: string[] };
 type Overview = { users: number; admins: number; byPlan: Record<string, number>; listings: number; activeListings: number; reservations: number; confirmed: number; gmv: number; commissions: number; leads: number; ads: number };
@@ -314,7 +316,7 @@ export default function Admin() {
       <div>
         <div className="topbar">MODO MAESTRO · ACCESO RESTRINGIDO</div>
         <header className="header"><div className="page header-in">
-          <Link className="brand" href="/"><span className="brand-mark"><Icon name="logo" size={22} /></span><span>biohostel<small>ADMIN</small></span></Link>
+          <Brand small="ADMIN" />
           <div className="hactions"><ThemeToggle /><Link className="btn btn-ghost" href="/">← Ver sitio</Link></div>
         </div></header>
         <div className="page section" style={{ maxWidth: 520 }}>
@@ -333,9 +335,9 @@ export default function Admin() {
     <div>
       <div className="topbar">MODO MAESTRO · {gate.me?.name.toUpperCase()} · ACCESO TOTAL</div>
       <header className="header"><div className="page header-in">
-        <Link className="brand" href="/"><span className="brand-mark"><Icon name="logo" size={22} /></span><span>biohostel<small>ADMIN</small></span></Link>
+        <Brand small="ADMIN" />
         <nav className="nav">
-          {["resumen", "usuarios", "alojamientos", "reservas", "solicitudes", "publicidad", "ia", "comisiones"].map((t) => (
+          {["resumen", "ajustes", "usuarios", "alojamientos", "reservas", "solicitudes", "publicidad", "ia", "comisiones"].map((t) => (
             <button key={t} className={`pill ${tab === t ? "on" : ""}`} onClick={() => setTab(t)} style={{ textTransform: "capitalize" }}>{t}</button>
           ))}
         </nav>
@@ -361,6 +363,8 @@ export default function Admin() {
             </div>
           </>
         )}
+
+        {tab === "ajustes" && <SiteSettingsPanel notify={notify} />}
 
         {tab === "usuarios" && (
           <>

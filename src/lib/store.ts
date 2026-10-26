@@ -1,5 +1,7 @@
 import { ADS, LISTINGS } from "./data";
 import { readTable, writeTable } from "./storage";
+import { StoredReview } from "./data";
+import { DEFAULT_SITE_SETTINGS, mergeSiteSettings, type SiteSettings } from "./site-settings";
 
 export type StoredUser = {
   id: string;
@@ -20,7 +22,7 @@ export type ListingTheme = {
   primary: string;
   accent: string;
   preset: "selva" | "mar" | "colonial" | "urbano" | "minimal";
-  font: "serif" | "sans";
+  font: "sans";
   rationale: string;
 };
 
@@ -98,6 +100,52 @@ function seedListings(): StoredListing[] {
   return LISTINGS.map((l) => ({ ...l, ownerId: "demo", active: true, featured: false, slug: slugify(l.titulo), createdAt: new Date().toISOString() }));
 }
 
+const DEMO_BY_ID = new Map(LISTINGS.map((l) => [l.id, l]));
+
+function cancellationFromPoliticas(politicas?: string): string {
+  if (!politicas) return "";
+  return (
+    politicas
+      .split("·")
+      .map((part) => part.trim())
+      .find((part) => /cancel/i.test(part)) ?? ""
+  );
+}
+
+// Rellena campos que faltan en registros guardados antes de que existieran
+// (slugs, datos de estancia) usando el demo de data.ts como referencia.
+function normalizeListings(rows: StoredListing[]): StoredListing[] {
+  const usedSlugs = new Set<string>();
+  return rows.map((row, index) => {
+    const demo = DEMO_BY_ID.get(row.id);
+    const titulo = String(row.titulo ?? demo?.titulo ?? "Alojamiento");
+    let slug = typeof row.slug === "string" ? row.slug.trim() : "";
+    if (!slug) slug = slugify(titulo);
+    while (usedSlugs.has(slug)) slug = `${slug}-${index + 1}`;
+    usedSlugs.add(slug);
+
+    return {
+      ...row,
+      slug,
+      checkIn: row.checkIn || demo?.checkIn || "15:00",
+      checkOut: row.checkOut || demo?.checkOut || "12:00",
+      cancellationPolicy:
+        row.cancellationPolicy ||
+        demo?.cancellationPolicy ||
+        cancellationFromPoliticas(row.politicas) ||
+        "Cancelación gratuita hasta 48h antes del check-in.",
+      houseRules: Array.isArray(row.houseRules) ? row.houseRules : (demo?.houseRules ?? []),
+      minStay: Number(row.minStay) > 0 ? Number(row.minStay) : (demo?.minStay ?? 1),
+      maxStay: Number(row.maxStay) > 0 ? Number(row.maxStay) : (demo?.maxStay ?? 30),
+      breakfastIncluded:
+        typeof row.breakfastIncluded === "boolean" ? row.breakfastIncluded : (demo?.breakfastIncluded ?? false),
+      direccion: row.direccion || demo?.direccion,
+      lat: typeof row.lat === "number" ? row.lat : demo?.lat,
+      lng: typeof row.lng === "number" ? row.lng : demo?.lng,
+    };
+  });
+}
+
 export const store: {
   users: () => Promise<StoredUser[]>;
   saveUsers: (r: StoredUser[]) => Promise<void>;
@@ -121,12 +169,16 @@ export const store: {
   saveListingChannels: (r: ListingChannel[]) => Promise<void>;
   ragDocs: () => Promise<RagDoc[]>;
   saveRagDocs: (r: RagDoc[]) => Promise<void>;
+   reviews: () => Promise<StoredReview[]>;
+   saveReviews: (r: StoredReview[]) => Promise<void>;
+  siteSettings: () => Promise<SiteSettings>;
+  saveSiteSettings: (r: SiteSettings) => Promise<void>;
 } = {
   users: () => readTable<StoredUser>("users", () => []),
   saveUsers: (r) => writeTable("users", r),
   sessions: () => readTable<StoredSession>("sessions", () => []),
   saveSessions: (r) => writeTable("sessions", r),
-  listings: () => readTable<StoredListing>("listings", seedListings),
+  listings: () => readTable<StoredListing>("listings", seedListings).then(normalizeListings),
   saveListings: (r) => writeTable("listings", r),
   reservations: () => readTable<StoredReservation>("reservations", () => []),
   saveReservations: (r) => writeTable("reservations", r),
@@ -150,6 +202,11 @@ export const store: {
   saveListingChannels: (r) => writeTable("listing-channels", r),
   ragDocs: () => readTable<RagDoc>("rag-docs", () => []),
   saveRagDocs: (r) => writeTable("rag-docs", r),
+   reviews: () => readTable<StoredReview>("reviews", () => []),
+   saveReviews: (r) => writeTable("reviews", r),
+  siteSettings: () =>
+    readTable<SiteSettings>("site-settings", () => [DEFAULT_SITE_SETTINGS]).then((rows) => mergeSiteSettings(rows[0])),
+  saveSiteSettings: (r) => writeTable("site-settings", [{ ...mergeSiteSettings(r), updatedAt: new Date().toISOString() }]),
 };
 
 export function uid(prefix: string) {
