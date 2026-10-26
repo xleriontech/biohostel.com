@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ADS, LISTINGS, PLANS, SPONSORS, PAQUETES, aiVerificarReserva, type Ad, type Listing, type PlanId } from "@/lib/data";
 import { ThemeToggle } from "./theme-toggle";
 import { CurrencySelect } from "./currency-select";
@@ -11,6 +12,20 @@ import { useCurrency } from "@/lib/currency";
 
 type User = { id: string; name: string; email: string; plan: PlanId; role?: string; favorites: string[]; follows: string[] };
 type Booking = { id: string; code: string; listingTitle: string; checkIn: string; checkOut: string; guests: number; base: number; commission: number; total: number; status: string; aiReport: string; createdAt: string };
+type ReservaPayload = {
+  listingId: string;
+  checkIn: string;
+  checkOut: string;
+  guests: number;
+  extras: { seguro: boolean; desayuno: boolean };
+  nombre?: string;
+  email?: string;
+  telefono?: string;
+};
+
+function normalizeText(s: string) {
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
 
 // alias para compatibilidad
 const PACKS = PAQUETES;
@@ -85,10 +100,11 @@ export default function Site() {
   const [chatA, setChatA] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
 
-  async function openListing(l: Listing) {
-    setSelected(l); setAiMsg(""); setAiOk(null); setSugerencia(null);
-    setChatQ(""); setChatA(""); setLch([]);
-    fetch(`/api/listing-channels?listingId=${l.id}`).then((r) => r.json()).then((d) => setLch(d.channels ?? [])).catch(() => null);
+  const router = useRouter();
+
+  function openListing(l: Listing) {
+    const slug = l.slug || (l.id || l.titulo).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "alojamiento";
+    router.push("/p/" + slug);
   }
 
   async function askAssistant() {
@@ -122,7 +138,7 @@ export default function Site() {
   const todas = useMemo(() => serverListings ?? LISTINGS, [serverListings]);
   const ciudades = useMemo(() => ["Todas", ...Array.from(new Set(todas.map((l) => l.ciudad)))], [todas]);
   const filtrados = todas.filter((l) => {
-    const okQ = !q || (l.titulo + l.ciudad + l.descripcion).toLowerCase().includes(q.toLowerCase());
+    const okQ = !q || normalizeText(l.titulo + " " + l.ciudad + " " + l.descripcion).includes(normalizeText(q));
     const okC = ciudad === "Todas" || l.ciudad === ciudad;
     const okT = tipo === "todos" || l.tipo === tipo;
     return okQ && okC && okT;
@@ -181,14 +197,28 @@ export default function Site() {
   }
 
   async function reservar(l: Listing) {
-    if (needLogin()) return;
-    if (checkOut <= checkIn) { notify("El check-out debe ser posterior al check-in."); return; }
+    if (user && checkOut <= checkIn) { notify("El check-out debe ser posterior al check-in."); return; }
+    // Paso extra inteligente: extras opcionales
+    const extras = confirm("¿Deseas agregar extras? (Seguro +5% · Desayuno +$20.000)\nOK = Sí, Cancelar = No extras");
+    const extrasData = extras ? { seguro: true, desayuno: true } : { seguro: false, desayuno: false };
+    // Si no está registrado, pide datos mínimos (fricción baja) para confirmar por teléfono
+    let payload: ReservaPayload = { listingId: l.id, checkIn, checkOut, guests: l.huespedes, extras: extrasData };
+    if (!user) {
+      const nombreInv = prompt("Nombre para la reserva:", "Invitado") || "Invitado";
+      const emailInv = prompt("Email para confirmación:", "") || `invitado@biohostel.com`;
+      const telefonoInv = prompt("Teléfono (obligatorio para confirmar sin cuenta):", "");
+      if (!telefonoInv || telefonoInv.trim().length < 6) {
+        notify("Debes colocar tu teléfono para confirmar la reserva sin cuenta.");
+        return;
+      }
+      payload = { ...payload, nombre: nombreInv, email: emailInv, telefono: telefonoInv.trim() };
+    }
     setReserving(true);
     try {
       const res = await fetch("/api/reservations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ listingId: l.id, checkIn, checkOut, guests: l.huespedes }),
+        body: JSON.stringify(payload),
       });
       const d = await res.json();
       if (!res.ok) {
@@ -200,7 +230,7 @@ export default function Site() {
       }
       const r = d.reservation;
       setAiOk(true);
-      setAiMsg(`${r.aiReport} Subtotal ${fmt(r.base)} + comisión ${fmt(r.commission)} = Total ${fmt(r.total)}. Código ${r.code}.`);
+      setAiMsg(`${r.aiReport} Subtotal ${fmt(r.base)} + comisión ${fmt(r.commission)} = Total ${fmt(r.total)}. Código ${r.code}.${(extrasData as {seguro?:boolean; desayuno?:boolean}).seguro ? ' · Seguro incluido' : ''}${(extrasData as {seguro?:boolean; desayuno?:boolean}).desayuno ? ' · Desayuno incluido' : ''}`);
       setSugerencia(null);
       notify(`Reserva ${r.code} confirmada · ${fmt(r.total)}`);
     } catch { notify("Error de conexión al reservar."); } finally { setReserving(false); }
@@ -306,7 +336,7 @@ export default function Site() {
             <select value={ciudad} onChange={(e) => setCiudad(e.target.value)}>{ciudades.map((c) => <option key={c}>{c}</option>)}</select>
             <input type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} />
             <input type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} />
-            <button className="btn btn-dark" onClick={() => document.getElementById("explorar")?.scrollIntoView({ behavior: "smooth" })}>Buscar</button>
+            <button className="btn btn-dark" onClick={() => { const resultados = filtrados.length; document.getElementById("explorar")?.scrollIntoView({ behavior: "smooth" }); notify(`Mostrando ${resultados} alojamiento(s) con tus filtros.`); alert(`Búsqueda aplicada: ${resultados} resultados.`); }}>Buscar</button>
           </div>
           <div className="tabs">
             <button className={`pill ${tipo === "todos" ? "on" : ""}`} onClick={() => setTipo("todos")}>Todo</button>
@@ -322,7 +352,7 @@ export default function Site() {
         <p className="muted"><Icon name="globe" size={14} /> Precios en {currencyCode} · <TasaDot live={ratesLive} /> {ratesLive ? `tasa del día ${ratesDate}` : "tasa de referencia"} · cambia la moneda arriba</p>
         <div className="grid3" style={{ marginTop: 18 }} id="subarriendos">
           {filtrados.map((l) => (
-            <article key={l.id} className="lcard">
+            <article key={l.id} className="lcard" onClick={() => openListing(l)} style={{ cursor: "pointer" }}>
               <CardImg listing={l} fav={favs.includes(l.id)} onFav={() => toggleFav(l.id)} />
               <div className="lbody">
                 <div className="lhost">
@@ -334,8 +364,8 @@ export default function Site() {
                 <div className="lfoot">
                   <div><span className="price">{fmt(l.precioNoche)}</span><span className="muted"> /noche</span>{l.precioMes && <span className="muted"> · {fmt(l.precioMes)}/mes</span>}<small className="lia"><Icon name="bot" size={13} /> IA verificada</small></div>
                   <div className="row">
-                    <button className="btn btn-green" onClick={() => openListing(l)}>Reservar</button>
-                    <button className="btn btn-ghost" onClick={() => toggleFollow(l.anfitrion.nombre)}>{seguidos.includes(l.anfitrion.nombre) ? <><Icon name="check" size={14} /> Siguiendo</> : "+ Seguir"}</button>
+                    <button className="btn btn-green" onClick={(e) => { e.stopPropagation(); openListing(l); }}>Reservar</button>
+                    <button className="btn btn-ghost" onClick={(e) => { e.stopPropagation(); toggleFollow(l.anfitrion.nombre); }}>{seguidos.includes(l.anfitrion.nombre) ? <><Icon name="check" size={14} /> Siguiendo</> : "+ Seguir"}</button>
                   </div>
                 </div>
               </div>

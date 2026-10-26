@@ -99,6 +99,7 @@ export type Listing = {
   anfitrion: { nombre: string; plan: PlanId; verificado: boolean; avatar: string; seguidores: number };
   fechasOcupadasBooking: string[];
   fechasOcupadasAirbnb: string[];
+  slug?: string;
   theme?: ListingTheme;
 };
 
@@ -285,7 +286,7 @@ export function aiVerificarReserva(l: Listing, checkIn: string, checkOut: string
   }
   // sugerir siguiente día libre
   const todas = [...l.fechasOcupadasBooking, ...l.fechasOcupadasAirbnb];
-  let sugerida = new Date(fin);
+  const sugerida = new Date(fin);
   for (let i = 0; i < 14; i++) {
     const s = sugerida.toISOString().slice(0, 10);
     if (!todas.includes(s)) break;

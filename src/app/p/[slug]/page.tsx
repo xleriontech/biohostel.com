@@ -1,113 +1,81 @@
-import { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { store } from "@/lib/store";
-import { Icon } from "@/app/icons";
+import { Suspense } from "react";
+import ReservaForm from "./reserva-form";
 
-function fmtMiles(n: number) {
-  return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
-
-interface Props {
-  params: Promise<{ slug: string }>;
-}
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const listings = await store.listings();
-  const listing = listings.find((l) => l.slug === slug);
-  if (!listing) return { title: "No encontrado" };
-  return {
-    title: `${listing.titulo} | BioHostel.com`,
-    description: listing.descripcion.slice(0, 160),
-    openGraph: {
-      title: listing.titulo,
-      description: listing.descripcion.slice(0, 160),
-      images: listing.galeria.length > 0 ? [listing.galeria[0]] : [],
-    },
-  };
+  const l = listings.find((x) => x.slug === slug || x.id === slug);
+  if (!l) return { title: "No encontrado" };
+  return { title: `${l.titulo} — Micrositio independiente` };
 }
 
-export default async function MiniSite({ params }: Props) {
+export default async function MiniSite({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const listings = await store.listings();
-  const listing = listings.find((l) => l.slug === slug);
+  const listing = listings.find((l) => l.slug === slug || l.id === slug);
   if (!listing) notFound();
-
-  const theme = (listing as { theme?: { primary?: string; accent?: string } }).theme;
-  const primary = theme?.primary ?? "#1d4a2c";
-  const accent = theme?.accent ?? "#bef264";
-
-  function money(n: number) {
-    return `$${n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} COP`;
-  }
-
+  const p = (listing.theme?.primary) || "#1d4a2c";
   return (
-    <html lang="es">
+    <>
       <head>
-        <style dangerouslySetInnerHTML={{
-          __html: `
-            * { box-sizing: border-box; margin: 0; padding: 0; }
-            body { font-family: system-ui, sans-serif; background: #f7fdf4; color: #1a2e22; }
-            .hero { min-height: 60vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, ${primary}, ${accent} 60%, ${accent}); color: #fff; text-align: center; padding: 40px 20px; }
-            .hero h1 { font-size: clamp(32px, 5vw, 48px); font-weight: 800; margin-bottom: 16px; }
-            .hero p { font-size: 1.1rem; opacity: 0.95; max-width: 600px; margin: 0 auto; }
-            .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
-            .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin: 32px 0; }
-            .card { background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px #14532d1a; }
-            .card img { width: 100%; height: 200px; object-fit: cover; }
-            .card-body { padding: 20px; }
-            .card h3 { font-size: 1.2rem; margin-bottom: 8px; }
-            .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; margin-right: 8px; background: #fff; color: ${primary}; }
-            .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 10px; font-weight: 700; text-decoration: none; font-size: 14px; }
-            .btn-primary { background: ${primary}; color: #fff; }
-            .btn-ghost { background: #fff; border: 1px solid #dcebd8; color: #1a2e22; }
-            .section-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 16px; }
-            .amenities { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-            .amenity { background: #eef7ea; border: 1px solid #dcebd8; padding: 6px 12px; border-radius: 999px; font-size: 13px; }
-            .footer { text-align: center; padding: 40px 20px; color: #6b7f6e; font-size: 14px; }
-          `
-        }} />
+        <title>{`${listing.titulo} — Micrositio`}</title>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context":"https://schema.org","@type":"LodgingBusiness","name":listing.titulo,"url":"/p/"+(listing.slug||listing.id),"address":{"@type":"PostalAddress","addressLocality":listing.ciudad},"aggregateRating":{"@type":"AggregateRating","ratingValue":listing.rating,"reviewCount":listing.resenas},"image":listing.galeria[0],"amenityFeature":listing.amenidades.map((a:string)=>({"@type":"LocationFeatureSpecification","name":a})) }) }} />
       </head>
-      <body>
-        <section className="hero" style={{ background: `linear-gradient(135deg, ${primary}, ${accent} 60%, ${accent})`, minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', textAlign: 'center', padding: '40px 20px' }}>
-          <h1>{listing.titulo}</h1>
-          <p>{listing.descripcion}</p>
-          <div style={{ marginTop: 24, display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-            <span className="badge" style={{ background: "#fff", color: primary }}>{listing.categoria}</span>
-            <span className="badge" style={{ background: "#fff", color: primary }}>{listing.ciudad}</span>
-            <span className="badge" style={{ background: "#fff", color: primary }}>{listing.huespedes} huéspedes</span>
-            <span className="badge" style={{ background: "#fff", color: primary }}>⭐ {listing.rating} ({listing.resenas} reseñas)</span>
+      <main style={{ fontFamily: "system-ui, sans-serif", background: "#f7fdf4", color: "#1a2e22" }}>
+        <header style={{ padding: 20, display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(255,255,255,0.92)", position: "sticky", top: 0, zIndex: 50 }}>
+          <Link href="/" style={{ fontWeight: 900, fontSize: 18, color: p, textDecoration: "none" }}>{listing.titulo}</Link>
+          <Link href="/" style={{ fontWeight: 700, fontSize: 14, color: p, textDecoration: "underline" }}>Volver</Link>
+        </header>
+        <section style={{ background: `linear-gradient(135deg, ${p}, #bef264 70%, #bef264)`, color: "#fff", textAlign: "center", padding: "80px 24px", position: "relative" }}>
+          <img src={listing.galeria[0]} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.15, filter: "blur(2px)" }} />
+          <div style={{ position: "relative", zIndex: 1 }}>
+            <h1 style={{ fontSize: "clamp(36px,6vw,68px)", fontWeight: 900, marginBottom: 16 }}>{listing.titulo}</h1>
+            <p style={{ fontSize: "1.2rem", opacity: 0.95, maxWidth: 640, margin: "0 auto" }}>{listing.descripcion}</p>
+            <div style={{ marginTop: 24, display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+              <span style={{ background: "#fff", color: p, padding: "6px 14px", borderRadius: 999, fontWeight: 700, fontSize: 12 }}>{listing.categoria}</span>
+              <span style={{ background: "rgba(255,255,255,0.2)", color: "#fff", padding: "6px 14px", borderRadius: 999, fontWeight: 700, fontSize: 12, border: "1px solid rgba(255,255,255,0.3)" }}>{listing.ciudad}</span>
+            </div>
           </div>
         </section>
-
-        <div className="container" style={{ maxWidth: 900, margin: '0 auto', padding: '40px 20px' }}>
-          <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24, margin: '32px 0' }}>
-            {listing.galeria.slice(0, 6).map((src: string, i: number) => (
-              <article key={i} className="card" style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px #14532d1a' }}>
-                <img src={src} alt={`${listing.titulo} ${i + 1}`} style={{ width: '100%', height: 200, objectFit: 'cover' }} />
-              </article>
+        <div style={{ maxWidth: 980, margin: "0 auto", padding: "64px 24px" }}>
+          <h2 style={{ fontSize: "2rem", fontWeight: 800, color: p }}>Galería</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
+            {listing.galeria.slice(0, 4).map((src: string, i: number) => (
+              <a key={i} href={src} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+                <img src={src} alt="" loading="lazy" style={{ width: "100%", height: 240, objectFit: "cover", borderRadius: 16 }} />
+              </a>
             ))}
-          </div>
-
-          <h2 className="section-title" style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: 16 }}>Amenidades</h2>
-          <div className="amenities" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-            {listing.amenidades.map((a: string, i: number) => (
-              <span key={i} className="amenity" style={{ background: '#eef7ea', border: '1px solid #dcebd8', padding: '6px 12px', borderRadius: '999px', fontSize: 13 }}>{a}</span>
-            ))}
-          </div>
-
-          <h2 className="section-title" style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: 16, marginTop: 32 }}>Políticas</h2>
-          <p style={{ lineHeight: 1.7, color: '#6b7f6e' }}>{listing.politicas}</p>
-
-          <div style={{ marginTop: 40, textAlign: 'center' }}>
-            <a href="/" className="btn btn-ghost" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 24px', borderRadius: 10, fontWeight: 700, textDecoration: 'none', fontSize: 14, background: '#fff', border: '1px solid #dcebd8', color: '#1a2e22' }}><Icon name="arrowLeft" size={16} /> Volver a BioHostel</a>
           </div>
         </div>
-
-        <footer className="footer" style={{ textAlign: 'center', padding: '40px 20px', color: '#6b7f6e', fontSize: 14 }}>
-          <p>BioHostel.com · Hecho con 💚 en Colombia</p>
+        <div style={{ maxWidth: 980, margin: "0 auto", padding: "64px 24px", background: "#fff", borderRadius: 24, boxShadow: "0 6px 32px rgba(26,46,34,0.05)", border: "1px solid rgba(26,46,34,0.06)" }}>
+          <h2 style={{ fontSize: "2rem", fontWeight: 800, color: p }}>Amenidades</h2>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+            {listing.amenidades.map((a: string, i: number) => (
+              <span key={i} style={{ background: `${a}18`, border: `1px solid ${p}18`, color: p, padding: "8px 16px", borderRadius: 999, fontSize: 14, fontWeight: 600 }}>{a}</span>
+            ))}
+          </div>
+        </div>
+        <div style={{ maxWidth: 980, margin: "0 auto", padding: "64px 24px" }}>
+          <h2 style={{ fontSize: "2rem", fontWeight: 800, color: p }}>Experiencias</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 24 }}>
+            <a href="#" style={{ textDecoration: "none", color: "inherit" }}><h3>Naturaleza</h3></a>
+            <a href="#" style={{ textDecoration: "none", color: "inherit" }}><h3>Yoga / Bienestar</h3></a>
+            <a href="#" style={{ textDecoration: "none", color: "inherit" }}><h3>Gastronomía</h3></a>
+          </div>
+        </div>
+        <div id="reserva" style={{ maxWidth: 980, margin: "0 auto", padding: "72px 24px", textAlign: "center" }}>
+          <Suspense>
+            <ReservaForm listingId={listing.id} />
+          </Suspense>
+        </div>
+        <footer style={{ textAlign: "center", padding: 48, background: "#1a2e22", color: "#fff" }}>
+          <p style={{ fontWeight: 700 }}>{listing.titulo}</p>
+          <p><Link href="/" style={{ color: "#fff", textDecoration: "underline" }}>BioHostel.com</Link> · <a href="https://www.google.com/maps/search/?api=1&query=Tropical+Biohostel+Nocaima" target="_blank" rel="noopener noreferrer" style={{ color: "#fff", textDecoration: "underline" }}>Ver en Google Maps</a></p>
         </footer>
-      </body>
-    </html>
+      </main>
+    </>
   );
 }

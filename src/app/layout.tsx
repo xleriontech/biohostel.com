@@ -11,14 +11,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `try{document.documentElement.dataset.theme=localStorage.getItem("bio-theme")||"light"}catch(e){}`,
-          }}
-        />
-      </head>
-      <body>{children}</body>
+      <head />
+      <body suppressHydrationWarning>
+      <script suppressHydrationWarning id="theme-init" dangerouslySetInnerHTML={{ __html: `try{document.documentElement.dataset.theme=localStorage.getItem("bio-theme")||"light"}catch(e){}` }} />
+      {children}
+    </body>
     </html>
   );
 }

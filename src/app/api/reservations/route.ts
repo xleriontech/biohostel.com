@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { store, uid } from "@/lib/store";
 import { currentUser } from "@/lib/server-auth";
+import { rateLimit } from "@/lib/security";
 
 async function rates(): Promise<Record<string, number>> {
   try {
@@ -35,10 +36,16 @@ export async function GET() {
 // POST: crea reserva con verificación IA en servidor
 export async function POST(req: Request) {
   const me = await currentUser();
-  if (!me) return NextResponse.json({ error: "Inicia sesión para reservar." }, { status: 401 });
-  const { listingId, checkIn, checkOut, guests } = await req.json().catch(() => ({}));
+  const clientKey = req.headers.get("x-forwarded-for") || (me?.id ?? "anon");
+  if (!rateLimit(`res-${clientKey}`, 3, 60000)) return NextResponse.json({ error: "Demasiadas reservas. Intenta en 1 min." }, { status: 429 });
+  const body = await req.json().catch(() => ({}));
+  const { listingId, checkIn, checkOut, guests, extras, nombre, email, telefono } = body;
+  const registrado = !!me;
   if (!listingId || !checkIn || !checkOut || checkOut <= checkIn) {
     return NextResponse.json({ error: "Fechas inválidas." }, { status: 400 });
+  }
+  if (!registrado && !telefono) {
+    return NextResponse.json({ error: "Debes colocar tu teléfono para confirmar la reserva sin cuenta." }, { status: 400 });
   }
   const listings = await store.listings();
   const l = listings.find((x) => x.id === listingId && x.active !== false);
@@ -80,7 +87,8 @@ export async function POST(req: Request) {
   }
 
   const n = Math.max(1, dias.length);
-  const base = l.tipo === "subarriendo" && l.precioMes ? Number(l.precioMes) : Number(l.precioNoche) * n;
+  const { dynamicPrice } = await import("@/lib/pricing");
+  const base = dynamicPrice(Number(l.precioNoche), l.tipo, l.precioMes ? Number(l.precioMes) : undefined, { checkIn, checkOut }, Number(guests) || 1, l.huespedes, registrado);
   const hostPlan = l.ownerId === "demo" ? l.anfitrion.plan : (await store.users()).find((u) => u.id === l.ownerId)?.plan ?? "gratuito";
   const rate = (await rates())[hostPlan] ?? 0.1;
   const commission = Math.round(base * rate);
@@ -90,8 +98,8 @@ export async function POST(req: Request) {
     code,
     listingId: l.id,
     listingTitle: l.titulo,
-    guestId: me.id,
-    guestName: me.name,
+    guestId: registrado ? me.id : "guest-temp",
+    guestName: registrado ? me.name : (nombre || email || "Invitado"),
     hostId: l.ownerId,
     checkIn,
     checkOut,

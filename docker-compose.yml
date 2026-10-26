@@ -1,0 +1,13 @@
+services:
+  biohostel:
+    build: .
+    container_name: biohostel_app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - ADMIN_SETUP_KEY=BIOHOSTEL-MASTER-2026
+    # volumes:
+    #   - ./.data:/app/.data  # Activar si Docker Desktop comparte X:\\
+    restart: unless-stopped
+    command: sh -c "npm run dev"
