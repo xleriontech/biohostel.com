@@ -115,8 +115,18 @@ export type ListingChannel = {
   lastSync: string;
 };
 
-// Documento del índice RAG (contenido de las propiedades)
-export type RagDoc = { id: string; listingId: string; title: string; text: string; updatedAt: string };
+// Documento del índice RAG: un fragmento (chunk) del contenido de la propiedad.
+// Los docs antiguos del formato completo no traen label/chunkIndex.
+export type RagDoc = {
+  id: string;
+  listingId: string;
+  title: string;
+  text: string;
+  updatedAt: string;
+  label?: string;
+  chunkIndex?: number;
+  chunkCount?: number;
+};
 
 // Convierte los demos de data.ts al formato persistente (dueño "demo")
 function seedListings(): StoredListing[] {

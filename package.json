@@ -8,6 +8,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "qa:payments": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/qa-payments.mjs",
+    "qa:rag": "node node_modules/tsx/dist/cli.mjs scripts/qa-rag.mjs",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",

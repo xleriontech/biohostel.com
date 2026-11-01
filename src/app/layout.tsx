@@ -48,7 +48,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const themeScript = `(function(){try{var t=localStorage.getItem("bio-theme");document.documentElement.dataset.theme=(t==="dark"||t==="light")?t:"${settings.design.defaultTheme}";}catch(e){document.documentElement.dataset.theme="${settings.design.defaultTheme}";}})();`;
 
   return (
-    <html lang="es" className={`${inter.variable} ${montserrat.variable} ${playfair.variable}`} suppressHydrationWarning>
+    <html lang="es" data-theme={settings.design.defaultTheme} className={`${inter.variable} ${montserrat.variable} ${playfair.variable}`} suppressHydrationWarning>
       <head>
         <style id="site-theme" dangerouslySetInnerHTML={{ __html: siteThemeCss(settings) }} />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />

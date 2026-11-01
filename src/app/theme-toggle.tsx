@@ -1,22 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { Icon } from "./icons";
 
-export function ThemeToggle() {
-  const [theme, setTheme] = useState("light");
+// El script de arranque del layout aplica el tema antes del primer pintado.
+// En dev React remonta <html> y limpia el atributo, por eso se vuelve a aplicar aquí.
+function readTheme(fallback: string): string {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const stored = localStorage.getItem("bio-theme");
+    return stored === "dark" || stored === "light" ? stored : document.documentElement.dataset.theme || fallback;
+  } catch {
+    return fallback;
+  }
+}
 
-  useEffect(() => {
-    try {
-      setTheme(document.documentElement.dataset.theme || localStorage.getItem("bio-theme") || "light");
-    } catch { /* noop */ }
-  }, []);
+export function ThemeToggle({ defaultTheme = "light" }: { defaultTheme?: string }) {
+  const [theme, setTheme] = useState(() => readTheme(defaultTheme));
+
+  useLayoutEffect(() => {
+    document.documentElement.dataset.theme = readTheme(defaultTheme);
+  }, [defaultTheme]);
 
   function toggle() {
     const next = theme === "dark" ? "light" : "dark";
     setTheme(next);
+    document.documentElement.dataset.theme = next;
     try {
-      document.documentElement.dataset.theme = next;
       localStorage.setItem("bio-theme", next);
     } catch { /* noop */ }
   }

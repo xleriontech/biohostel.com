@@ -1,4 +1,4 @@
-import { store, type RagDoc } from "./store";
+import { store, type ListingTheme, type RagDoc } from "./store";
 
 // RAG léxico local (TF-IDF + coseno): aprende del contenido que suben los usuarios.
 // Sin dependencias ni claves: funciona offline. Si se configura un LLM, se usa para redactar.
@@ -17,29 +17,6 @@ export function tokenize(text: string): string[] {
     .filter((w) => w.length > 2 && !STOP.has(w));
 }
 
-export function docText(l: {
-  titulo: string;
-  descripcion: string;
-  ciudad: string;
-  categoria: string;
-  amenidades: string[];
-  politicas: string;
-  precioNoche: number;
-  huespedes: number;
-  theme?: { primary: string; accent: string; preset: string; font: string; rationale: string };
-}): string {
-  return [
-    `Título: ${l.titulo}`,
-    `Ubicación: ${l.ciudad}`,
-    `Categoría: ${l.categoria}`,
-    `Precio por noche: ${l.precioNoche} COP para ${l.huespedes} huéspedes`,
-    `Descripción: ${l.descripcion}`,
-    `Amenidades: ${l.amenidades.join(", ")}`,
-    `Políticas: ${l.politicas}`,
-    l.theme ? `Diseño del sitio: estilo ${l.theme.preset}, colores ${l.theme.primary} y ${l.theme.accent}, tipografía ${l.theme.font}. ${l.theme.rationale}` : "",
-  ].filter(Boolean).join("\n");
-}
-
 function tf(tokens: string[]): Map<string, number> {
   const m = new Map<string, number>();
   tokens.forEach((t) => m.set(t, (m.get(t) ?? 0) + 1));
@@ -48,7 +25,92 @@ function tf(tokens: string[]): Map<string, number> {
   return m;
 }
 
-export type Scored = { doc: RagDoc; score: number; snippet: string };
+export type Scored = { doc: RagDoc; score: number; snippet: string; source: string };
+
+type Section = { label: string; text: string };
+type Chunk = { label: string; text: string };
+
+// Fragmentos pequeños para que la cita apunte a la sección exacta del alojamiento.
+const MIN_SECTION = 150;
+const MAX_CHUNK = 260;
+
+function splitLong(text: string, max: number): string[] {
+  if (text.length <= max) return [text];
+  const parts: string[] = [];
+  let rest = text.trim();
+  while (rest.length > max) {
+    const cut = rest.lastIndexOf(" ", max);
+    const at = cut > Math.floor(max * 0.5) ? cut : max;
+    parts.push(rest.slice(0, at).trim());
+    rest = rest.slice(at).trim();
+  }
+  if (rest) parts.push(rest);
+  return parts;
+}
+
+// Las secciones con sustento van solas (partidas si exceden MAX_CHUNK); las cortas se agrupan.
+function assembleChunks(sections: Section[]): Chunk[] {
+  const chunks: Chunk[] = [];
+  let group: Section[] = [];
+  let chars = 0;
+  const flush = () => {
+    if (!group.length) return;
+    chunks.push({ label: group.map((s) => s.label).join(" · "), text: group.map((s) => s.text).join("\n") });
+    group = [];
+    chars = 0;
+  };
+  for (const s of sections) {
+    if (s.text.length >= MIN_SECTION) {
+      flush();
+      const parts = splitLong(s.text, MAX_CHUNK);
+      parts.forEach((p, j) => chunks.push({ label: parts.length > 1 ? `${s.label} ${j + 1}/${parts.length}` : s.label, text: p }));
+      continue;
+    }
+    if (group.length && chars + s.text.length > MAX_CHUNK) flush();
+    group.push(s);
+    chars += s.text.length;
+  }
+  flush();
+  return chunks;
+}
+
+// Contenido del alojamiento partido en fragmentos etiquetados por sección.
+export type IndexableListing = {
+  titulo: string;
+  descripcion: string;
+  ciudad: string;
+  categoria: string;
+  amenidades: string[];
+  politicas: string;
+  precioNoche: number;
+  huespedes: number;
+  theme?: ListingTheme;
+};
+
+export function chunkListing(l: IndexableListing): Chunk[] {
+  const sections: Section[] = [
+    {
+      label: "Perfil",
+      text: [`Título: ${l.titulo}`, `Ubicación: ${l.ciudad}`, `Categoría: ${l.categoria}`, `Capacidad: ${l.huespedes} huéspedes`].join("\n"),
+    },
+    { label: "Precio", text: `Precio por noche: ${l.precioNoche} COP para ${l.huespedes} huéspedes` },
+    { label: "Descripción", text: `Descripción: ${l.descripcion}` },
+    { label: "Amenidades", text: `Amenidades: ${l.amenidades.join(", ")}` },
+    { label: "Políticas", text: `Políticas: ${l.politicas}` },
+    l.theme
+      ? {
+          label: "Diseño",
+          text: `Diseño del sitio: estilo ${l.theme.preset}, colores ${l.theme.primary} y ${l.theme.accent}, tipografía ${l.theme.font}. ${l.theme.rationale}`,
+        }
+      : null,
+  ].filter((s): s is Section => Boolean(s) && s!.text.trim().length > 0);
+  return assembleChunks(sections);
+}
+
+// El texto completo del alojamiento (concatenando sus fragmentos).
+export function docText(l: IndexableListing): string {
+  return chunkListing(l).map((c) => c.text).join("\n");
+}
 
 export function searchDocs(query: string, docs: RagDoc[], topK = 3, listingId?: string): Scored[] {
   const qTokens = tokenize(query);
@@ -67,7 +129,7 @@ export function searchDocs(query: string, docs: RagDoc[], topK = 3, listingId?: 
   qTf.forEach((v, k) => { qNorm += (v * idf(k)) ** 2; });
   qNorm = Math.sqrt(qNorm) || 1;
 
-  return pool
+  const scored = pool
     .map((doc, i) => {
       const dTf = tf(docTokens[i]);
       let dot = 0;
@@ -78,11 +140,30 @@ export function searchDocs(query: string, docs: RagDoc[], topK = 3, listingId?: 
         if (qTf.has(k)) dot += w * (qTf.get(k)! * idf(k));
       });
       const score = dot / ((Math.sqrt(dNorm) || 1) * qNorm);
-      return { doc, score, snippet: bestSnippet(doc.text, qTokens) };
+      return { doc, score, snippet: bestSnippet(doc.text, qTokens), source: sourceOf(doc) };
     })
-    .filter((s) => s.score > 0.02)
+    .filter((s) => s.score > 0.02);
+
+  // TopK por alojamiento: un solo listado no puede acaparar todas las citas.
+  const perListing = new Map<string, number>();
+  return scored
     .sort((a, b) => b.score - a.score)
+    .filter((s) => {
+      const n = (perListing.get(s.doc.listingId) ?? 0) + 1;
+      if (n > 2) return false;
+      perListing.set(s.doc.listingId, n);
+      return true;
+    })
     .slice(0, topK);
+}
+
+function sourceOf(doc: RagDoc): string {
+  const base = `«${doc.title}»`;
+  if (!doc.label) return base;
+  const parts = doc.label.split(" · ");
+  if (parts.length === 1) return `${base} — ${doc.label}`;
+  const shown = parts.slice(0, 2).join(" · ");
+  return `${base} — ${shown}${parts.length > 2 ? ` (+${parts.length - 2} más)` : ""}`;
 }
 
 function bestSnippet(text: string, qTokens: string[]): string {
@@ -101,15 +182,26 @@ function bestSnippet(text: string, qTokens: string[]): string {
   return best.trim().slice(0, 280);
 }
 
-export async function indexListing(l: { id: string; titulo: string; descripcion: string; ciudad: string; categoria: string; amenidades: string[]; politicas: string; precioNoche: number; huespedes: number; theme?: { primary: string; accent: string; preset: string; font: string; rationale: string } }) {
+function chunkRows(l: IndexableListing & { id: string }): RagDoc[] {
+  const chunks = chunkListing(l);
+  const now = new Date().toISOString();
+  return chunks.map((c, i) => ({
+    id: `rag-${l.id}-${i}`,
+    listingId: l.id,
+    title: l.titulo,
+    text: c.text,
+    label: c.label,
+    chunkIndex: i,
+    chunkCount: chunks.length,
+    updatedAt: now,
+  }));
+}
+
+export async function indexListing(l: IndexableListing & { id: string }) {
   const docs = await store.ragDocs();
-  const text = docText(l);
-  const i = docs.findIndex((d) => d.listingId === l.id);
-  const row: RagDoc = { id: i >= 0 ? docs[i].id : `rag-${l.id}`, listingId: l.id, title: l.titulo, text, updatedAt: new Date().toISOString() };
-  if (i >= 0) docs[i] = row;
-  else docs.push(row);
-  await store.saveRagDocs(docs);
-  return row;
+  const rows = chunkRows(l);
+  await store.saveRagDocs([...docs.filter((d) => d.listingId !== l.id), ...rows]);
+  return rows;
 }
 
 export async function removeFromIndex(listingId: string) {
@@ -117,11 +209,10 @@ export async function removeFromIndex(listingId: string) {
   await store.saveRagDocs(docs.filter((d) => d.listingId !== listingId));
 }
 
+// Devuelve el número de alojamientos reindexados (no de fragmentos).
 export async function reindexAll() {
   const listings = await store.listings();
-  const docs: RagDoc[] = listings
-    .filter((l) => l.active !== false)
-    .map((l) => ({ id: `rag-${l.id}`, listingId: l.id, title: l.titulo, text: docText(l), updatedAt: new Date().toISOString() }));
-  await store.saveRagDocs(docs);
-  return docs.length;
+  const activos = listings.filter((l) => l.active !== false);
+  await store.saveRagDocs(activos.flatMap((l) => chunkRows(l)));
+  return activos.length;
 }

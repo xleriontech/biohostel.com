@@ -78,7 +78,7 @@ export default function Admin() {
   const [aiKey, setAiKey] = useState("");
   const [aiBase, setAiBase] = useState("");
   const [aiTest, setAiTest] = useState("");
-  const [ragStats, setRagStats] = useState<{ docs: number; indexedListings: number; totalListings: number; sample: { title: string; chars: number }[] } | null>(null);
+  const [ragStats, setRagStats] = useState<{ docs: number; chunks: number; indexedListings: number; totalListings: number; chunked: boolean; sample: { title: string; label: string; chars: number }[] } | null>(null);
   const [ragQ, setRagQ] = useState("¿Aceptan mascotas y qué incluye el desayuno?");
   const [ragA, setRagA] = useState("");
   const { fmt } = useCurrency();
@@ -614,14 +614,17 @@ export default function Admin() {
             </div>
 
             <h3 style={{ marginTop: 22 }}>RAG — lo que la IA aprendió de las propiedades</h3>
+            {ragStats && ragStats.docs > 0 && !ragStats.chunked && (
+              <div className="aibox" style={{ marginBottom: 10 }}>El índice está en formato antiguo (documento completo): las citas aún no apuntan a una sección. Pulsa «Reindexar todo».</div>
+            )}
             <div className="kpis">
-              <div className="kpi"><span className="muted">Documentos</span><strong>{ragStats?.docs ?? "…"}</strong></div>
+              <div className="kpi"><span className="muted">Fragmentos</span><strong>{ragStats?.chunks ?? "…"}</strong><span className="muted">citas por sección</span></div>
               <div className="kpi"><span className="muted">Propiedades indexadas</span><strong>{ragStats ? `${ragStats.indexedListings}/${ragStats.totalListings}` : "…"}</strong></div>
               <div className="kpi"><span className="muted">Índice</span><strong>TF-IDF local</strong><span className="muted">cada publicación auto-indexa</span></div>
               <div className="kpi"><span className="muted">Acciones</span><strong>—</strong><button className="btn btn-ghost" onClick={async () => {
                 const res = await fetch("/api/admin/rag", { method: "POST" });
                 const d = await res.json();
-                if (res.ok) { notify(`Reindexadas ${d.docs} propiedades.`); loadAI(); }
+                if (res.ok) { notify(`Reindexadas ${d.listings} propiedades en ${d.chunks} fragmentos.`); loadAI(); }
               }}><Icon name="refresh" size={14} /> Reindexar todo</button></div>
             </div>
             <div className="kpi" style={{ marginTop: 12 }}>

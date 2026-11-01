@@ -69,9 +69,18 @@ export async function polishReply(draft: string, context: string): Promise<strin
   }
 }
 
+// Fuentes citables: un alojamiento aparece una sola vez aunque aportes varios fragmentos.
+function sourcesOf(hits: { doc: { listingId: string; title: string } }[]): string[] {
+  const seen = new Map<string, string>();
+  hits.forEach((h) => {
+    if (!seen.has(h.doc.listingId)) seen.set(h.doc.listingId, h.doc.title);
+  });
+  return [...seen.values()];
+}
+
 export async function answerWithRAG(question: string, listingId?: string): Promise<{ answer: string; sources: string[]; provider: string; grounded: boolean }> {
   const docs = await store.ragDocs();
-  const hits = searchDocs(question, docs, 3, listingId);
+  const hits = searchDocs(question, docs, 4, listingId);
   const cfg = await store.aiConfig().catch(() => ({ provider: "local" as AIProvider, model: "", apiKey: "", baseUrl: "", updatedAt: "" }));
 
   if (!hits.length) {
@@ -83,16 +92,16 @@ export async function answerWithRAG(question: string, listingId?: string): Promi
     };
   }
 
-  const context = hits.map((h, i) => `[${i + 1}] ${h.doc.title}: ${h.doc.text}`).join("\n\n");
+  const context = hits.map((h, i) => `[${i + 1}] (alojamiento: ${h.doc.title} · sección: ${h.doc.label ?? "contenido"})\n${h.doc.text}`).join("\n\n");
   const system = "Eres el asistente de Biohostels. Responde SOLO con la información del contexto sobre alojamientos. Sé breve (máx 4 líneas), en español, con precios en COP. Si el contexto no alcanza, dilo.";
-  const sources = hits.map((h) => h.doc.title);
+  const sources = sourcesOf(hits);
 
-  // Modo local: respuesta extractiva con citas
+  // Modo local: respuesta extractiva citando el fragmento y su sección
   if (cfg.provider === "local" || !cfg.apiKey) {
     if (cfg.provider !== "local" && !cfg.apiKey && cfg.provider !== "ollama") {
       // proveedor con key pendiente → igual responde extractivo
     }
-    const bullets = hits.map((h, i) => `• ${h.snippet} (fuente: ${h.doc.title})`).join("\n");
+    const bullets = hits.map((h) => `• ${h.snippet} (fuente: ${h.source})`).join("\n");
     return { answer: `Según lo publicado:\n${bullets}`, sources, provider: "local", grounded: true };
   }
 
@@ -103,7 +112,7 @@ export async function answerWithRAG(question: string, listingId?: string): Promi
         : await openAIChat(cfg.baseUrl, cfg.apiKey, cfg.model, system, `Contexto:\n${context}\n\nPregunta: ${question}`);
     return { answer: text, sources, provider: cfg.provider, grounded: true };
   } catch (e) {
-    const bullets = hits.map((h, i) => `• ${h.snippet} (fuente: ${h.doc.title})`).join("\n");
+    const bullets = hits.map((h) => `• ${h.snippet} (fuente: ${h.source})`).join("\n");
     return {
       answer: `El modelo falló (${e instanceof Error ? e.message : "?"}). Te respondo con lo publicado:\n${bullets}`,
       sources,
