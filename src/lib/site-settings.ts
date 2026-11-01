@@ -318,7 +318,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
     themeToggle: true,
   },
   legal: { terms: TERMS, privacy: PRIVACY, cookies: COOKIES },
-  copyVersion: 2,
+  copyVersion: 3,
   identityVersion: 1,
   updatedAt: new Date().toISOString(),
 };
