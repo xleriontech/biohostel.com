@@ -39,7 +39,7 @@ export async function POST(req: Request) {
   return NextResponse.json({ channel: ch });
 }
 
-// PATCH {id, action:"sync"} → la IA descarga el iCal y actualiza fechas ocupadas
+// PATCH {id, action:"sync"} → el servidor descarga el iCal y actualiza fechas ocupadas
 export async function PATCH(req: Request) {
   const me = await currentUser();
   if (!me) return NextResponse.json({ error: "Inicia sesión." }, { status: 401 });

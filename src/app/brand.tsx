@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSiteSettings } from "./site-settings-context";
-import { Icon } from "./icons";
+import { BiohostelsMark } from "@/components/biohostels-brand";
 
 export function Brand({ href = "/", small, onClick }: { href?: string; small?: string; onClick?: () => void }) {
   const settings = useSiteSettings();
@@ -15,12 +15,12 @@ export function Brand({ href = "/", small, onClick }: { href?: string; small?: s
           // eslint-disable-next-line @next/next/no-img-element
           <img src={settings.brand.logoUrl} alt="" />
         ) : (
-          <Icon name="logo" size={22} />
+          <BiohostelsMark size={24} />
         )}
       </span>
       <span>
         {settings.brand.name}
-        {label ? <small>{label}</small> : null}
+        {label ? <small className={small ? undefined : "brand-tld"}>{label}</small> : null}
       </span>
     </Link>
   );

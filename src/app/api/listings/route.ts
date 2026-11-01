@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { store, uid } from "@/lib/store";
 import { currentUser } from "@/lib/server-auth";
 import { applyListingEdit } from "@/lib/listing-edit";
+import { LEGAL_VERSION, isValidRnt, legalPublishIssue, normalizeRnt } from "@/lib/legal";
+import { deletePrivateFile } from "@/lib/storage";
 
 export async function GET(req: Request) {
   const scope = new URL(req.url).searchParams.get("scope");
@@ -23,6 +25,21 @@ export async function POST(req: Request) {
   if (!titulo) return NextResponse.json({ error: "Falta el título." }, { status: 400 });
   if (imagenes.length === 0) return NextResponse.json({ error: "Elige al menos 1 imagen." }, { status: 400 });
 
+  const tipo: "reserva" | "subarriendo" = b.tipo === "subarriendo" ? "subarriendo" : "reserva";
+  const rnt = normalizeRnt(b.rnt);
+  if (!isValidRnt(rnt)) {
+    return NextResponse.json(
+      { error: "El RNT es obligatorio para publicar (Decreto 1836 de 2021). Escribe el número de tu Registro Nacional de Turismo." },
+      { status: 400 },
+    );
+  }
+  if (tipo === "subarriendo" && b.subleaseDeclared !== true) {
+    return NextResponse.json(
+      { error: "Debes declarar que cuentas con autorización escrita del propietario para subarrendar (Ley 820 de 2003, art. 17)." },
+      { status: 400 },
+    );
+  }
+
   const mine = (await store.listings()).filter((l) => l.ownerId === me.id);
   const maxAlojamientos = me.plan === "gratuito" ? 1 : me.plan === "corporativo" ? 20 : 9999;
   if (mine.length >= maxAlojamientos) {
@@ -40,16 +57,16 @@ export async function POST(req: Request) {
   if (all.some((x) => x.slug === slug)) slug = `${slug}-${Date.now().toString(36).slice(-4)}`;
   const theme = b.theme && typeof b.theme.primary === "string" ? {
     primary: String(b.theme.primary).slice(0, 20),
-    accent: String(b.theme.accent ?? "#bef264").slice(0, 20),
-    preset: ["selva", "mar", "colonial", "urbano", "minimal"].includes(b.theme.preset) ? b.theme.preset : "selva",
+    accent: String(b.theme.accent ?? "#e4e4e7").slice(0, 20),
+    preset: ["selva", "mar", "colonial", "urbano", "minimal"].includes(b.theme.preset) ? b.theme.preset : "minimal",
     font: "sans" as const,
     rationale: String(b.theme.rationale ?? "").slice(0, 500),
   } : undefined;
   const nuevo = {
     id: uid("lst"),
     titulo,
-    tipo: (b.tipo === "subarriendo" ? "subarriendo" : "reserva") as "reserva" | "subarriendo",
-    categoria: b.tipo === "subarriendo" ? "Subarriendo" : String(b.categoria ?? "Hostel"),
+    tipo,
+    categoria: tipo === "subarriendo" ? "Subarriendo" : String(b.categoria ?? "Hostel"),
     ciudad: String(b.ciudad ?? "Por definir").slice(0, 100),
     direccion: String(b.direccion ?? "").slice(0, 200),
     lat: b.lat ? Number(b.lat) : undefined,
@@ -82,10 +99,14 @@ export async function POST(req: Request) {
     fechasOcupadasBooking: [] as string[],
     fechasOcupadasAirbnb: [] as string[],
     ownerId: me.id,
-    active: true,
+    // Un subarriendo nace pausado: se activa al adjuntar la autorización del propietario.
+    active: tipo !== "subarriendo",
     featured: false,
     slug,
     theme,
+    rnt,
+    legalVersion: LEGAL_VERSION,
+    subleaseAuth: tipo === "subarriendo" ? { confirmed: true } : undefined,
     createdAt: new Date().toISOString(),
   };
   all.unshift(nuevo);
@@ -100,7 +121,7 @@ export async function POST(req: Request) {
     chs.unshift({ id: `lch-${nuevo.id}`, listingId: nuevo.id, platform: "Web", url: fuente.slice(0, 500), icalUrl: "", occupied: [], lastSync: "nunca" });
     await store.saveListingChannels(chs);
   }
-  return NextResponse.json({ listing: nuevo });
+  return NextResponse.json({ listing: nuevo, requiresSubleaseDoc: tipo === "subarriendo" });
 }
 
 export async function PATCH(req: Request) {
@@ -113,11 +134,19 @@ export async function PATCH(req: Request) {
   if (listing.ownerId !== me.id) return NextResponse.json({ error: "No es tu publicación." }, { status: 403 });
 
   const limits = me.plan === "gratuito" ? { maxFotos: 5, maxDesc: 300 } : { maxFotos: 30, maxDesc: 5000 };
+  const previousDoc = listing.subleaseAuth?.docName;
   const error = applyListingEdit(listing, body, limits);
   if (error) return NextResponse.json({ error }, { status: 400 });
-  if (typeof body.active === "boolean") listing.active = body.active;
+  if (typeof body.active === "boolean") {
+    if (body.active) {
+      const issue = legalPublishIssue(listing);
+      if (issue) return NextResponse.json({ error: issue }, { status: 400 });
+    }
+    listing.active = body.active;
+  }
 
   await store.saveListings(all);
+  if (previousDoc && listing.subleaseAuth?.docName !== previousDoc) await deletePrivateFile(previousDoc);
   const { indexListing, removeFromIndex } = await import("@/lib/rag");
   if (listing.active === false) await removeFromIndex(listing.id).catch(() => null);
   else await indexListing(listing).catch(() => null);

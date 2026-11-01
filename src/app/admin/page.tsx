@@ -144,7 +144,8 @@ export default function Admin() {
   const charts = useMemo(() => {
     const byStatus = [
       { label: "Confirmadas", value: reservations.filter((r) => r.status === "confirmada").length, color: "#16a34a" },
-      { label: "Canceladas", value: reservations.filter((r) => r.status !== "confirmada").length, color: "#ef4444" },
+      { label: "Pago pendiente", value: reservations.filter((r) => r.status === "pendiente_pago").length, color: "#f59e0b" },
+      { label: "Canceladas", value: reservations.filter((r) => r.status !== "confirmada" && r.status !== "pendiente_pago").length, color: "#ef4444" },
     ];
     const months: Record<string, { n: number; gmv: number }> = {};
     reservations.forEach((r) => {
@@ -302,7 +303,7 @@ export default function Admin() {
           <h2>Instalación inicial</h2>
           <p className="muted">Crea la cuenta maestra o promueve tu correo existente. Requiere la clave de instalación (<strong>BIOHOSTEL-MASTER-2026</strong>, cámbiala con la variable <code>ADMIN_SETUP_KEY</code>).</p>
           <div className="field"><label>Nombre (solo cuenta nueva)</label><input value={sName} onChange={(e) => setSName(e.target.value)} placeholder="Tu nombre" /></div>
-          <div className="field"><label>Correo</label><input type="email" value={sEmail} onChange={(e) => setSEmail(e.target.value)} placeholder="admin@biohostel.com" /></div>
+          <div className="field"><label>Correo</label><input type="email" value={sEmail} onChange={(e) => setSEmail(e.target.value)} placeholder="admin@biohostels.com" /></div>
           <div className="field"><label>Contraseña (mínimo 6)</label><input type="password" value={sPass} onChange={(e) => setSPass(e.target.value)} /></div>
           <div className="field"><label>Clave de instalación</label><input type="password" value={sKey} onChange={(e) => setSKey(e.target.value)} placeholder="BIOHOSTEL-MASTER-2026" /></div>
           {sErr && <div className="aibox warn">{sErr}</div>}
@@ -407,7 +408,7 @@ export default function Admin() {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={l.imagen} alt="" style={{ width: 72, height: 48, objectFit: "cover", borderRadius: 8 }} />
                     </td>
-                    <td><strong>{l.titulo}</strong><br /><span className="muted">{l.ciudad} · {l.tipo} · {(l.galeria ?? []).length} fotos</span></td>
+                    <td><strong>{l.titulo}</strong><br /><span className="muted">{l.ciudad} · {l.tipo} · RNT {l.rnt || "pendiente"} · {(l.galeria ?? []).length} fotos</span></td>
                     <td>{owner ? <>{owner.name}<br /><span className="muted">{owner.email}</span>{owner.banned && <><br /><span className="tag tag-plan-premium">BANEADO</span></>}</> : <span className="muted">demo</span>}</td>
                     <td>{fmt(l.precioNoche)}</td>
                     <td>{l.active === false ? "Pausada" : "Activa"}{l.featured ? " · ★" : ""}</td>
@@ -435,11 +436,12 @@ export default function Admin() {
               <button className="btn btn-ghost" onClick={() => exportReservations("json")}><Icon name="download" size={15} /> Exportar JSON</button>
               <span className="muted">Compatible con Excel y Google Sheets</span>
             </div>
-            <table className="tbl"><thead><tr><th>CÓDIGO</th><th>HUÉSPED</th><th>ALOJAMIENTO</th><th>FECHAS</th><th>TOTAL</th><th>ESTADO</th><th></th></tr></thead>
+            <table className="tbl"><thead><tr><th>CÓDIGO</th><th>HUÉSPED</th><th>ALOJAMIENTO</th><th>FECHAS</th><th>TOTAL</th><th>ESTADO</th><th>PAGO</th><th></th></tr></thead>
               <tbody>{reservations.map((r) => (
                 <tr key={r.id}><td><strong>{r.code}</strong></td><td>{r.guestName}</td><td>{r.listingTitle}</td><td>{r.checkIn} → {r.checkOut}</td><td>{fmt(r.total)}</td>
-                  <td>{r.status === "confirmada" ? "Confirmada" : "Cancelada"}</td>
-                  <td><button className="btn btn-ghost" onClick={() => call("/api/admin/reservations", "PATCH", { id: r.id, status: r.status === "confirmada" ? "cancelada" : "confirmada" })}>Cambiar</button></td>
+                  <td>{r.status === "confirmada" ? "Confirmada" : r.status === "pendiente_pago" ? "Pago pendiente" : "Cancelada"}</td>
+                  <td>{r.payment?.status === "aprobado" ? <>Aprobado{r.status === "cancelada" && <span style={{ color: "#b45309", fontWeight: 700 }}> · Reembolsar en Wompi</span>}</> : r.payment?.status === "no_aplica" ? "Manual" : r.payment?.status === "rechazado" ? "Rechazado" : r.payment?.status === "expirado" ? "Vencido" : r.status === "pendiente_pago" ? "Pendiente" : "—"}</td>
+                  <td><button className="btn btn-ghost" onClick={() => call("/api/admin/reservations", "PATCH", { id: r.id, status: r.status === "confirmada" ? "cancelada" : "confirmada" })}>{r.status === "confirmada" ? "Cancelar" : r.status === "pendiente_pago" ? "Confirmar pago" : "Reactivar"}</button></td>
                 </tr>
               ))}</tbody>
             </table>

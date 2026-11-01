@@ -19,10 +19,10 @@ export function parseIcalDates(ics: string): string[] {
   return [...days].sort();
 }
 
-export async function fetchIcalDates(url: string): Promise<string[]> {
+export async function fetchIcalDates(url: string, timeoutMs = 15000): Promise<string[]> {
   const res = await fetch(url.trim(), {
-    headers: { "User-Agent": "BioHostelSync/1.0" },
-    signal: AbortSignal.timeout(15000),
+    headers: { "User-Agent": "BiohostelsSync/1.0" },
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const text = await res.text();
@@ -31,13 +31,38 @@ export async function fetchIcalDates(url: string): Promise<string[]> {
 }
 
 // Feed iCal que el anfitrión conecta en Airbnb/Booking para devolver los bloqueos
-export function buildIcalFeed(listingTitle: string, reservations: { checkIn: string; checkOut: string; code: string }[]) {
+export function buildIcalFeed(
+  listingTitle: string,
+  reservations: { checkIn: string; checkOut: string; code: string; status?: string }[],
+) {
   const stamp = new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
   const evts = reservations
     .map((r) => {
       const f = (s: string) => s.replace(/-/g, "");
-      return ["BEGIN:VEVENT", `UID:${r.code}@biohostel.com`, `DTSTAMP:${stamp}`, `DTSTART;VALUE=DATE:${f(r.checkIn)}`, `DTEND;VALUE=DATE:${f(r.checkOut)}`, `SUMMARY:Reservada BioHostel ${r.code} - ${listingTitle.slice(0, 40)}`, "END:VEVENT"].join("\r\n");
+      const tentative = r.status === "pendiente_pago";
+      return [
+        "BEGIN:VEVENT",
+        `UID:${r.code}@biohostels.com`,
+        `DTSTAMP:${stamp}`,
+        `DTSTART;VALUE=DATE:${f(r.checkIn)}`,
+        `DTEND;VALUE=DATE:${f(r.checkOut)}`,
+        `SUMMARY:${tentative ? "Pago pendiente" : "Reservada"} Biohostels ${r.code} - ${listingTitle.slice(0, 40)}`,
+        `STATUS:${tentative ? "TENTATIVE" : "CONFIRMED"}`,
+        "TRANSP:OPAQUE",
+        "END:VEVENT",
+      ].join("\r\n");
     })
     .join("\r\n");
-  return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//BioHostel//RAG Sync//ES", "CALSCALE:GREGORIAN", evts, "END:VCALENDAR"].filter(Boolean).join("\r\n");
+  return [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Biohostels//iCal Feed//ES",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    `X-WR-CALNAME:Biohostels ${listingTitle.slice(0, 50)}`,
+    "REFRESH-INTERVAL;VALUE=DURATION:PT1H",
+    "X-PUBLISHED-TTL:PT1H",
+    evts,
+    "END:VCALENDAR",
+  ].filter(Boolean).join("\r\n");
 }

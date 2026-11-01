@@ -1,9 +1,9 @@
-export type FontPreset = "system" | "inter" | "geometric" | "humanist" | "rounded";
+export type FontPreset = "biohostels" | "system" | "inter" | "geometric" | "humanist" | "rounded";
 export type ThemeMode = "light" | "dark";
 export type NavItem = { label: string; href: string };
 export type SocialLink = { label: string; url: string };
 export type LegalSection = { title: string; body: string };
-export type LegalPage = { title: string; intro: string; sections: LegalSection[] };
+export type LegalPage = { title: string; intro: string; version?: string; sections: LegalSection[] };
 
 export type SiteSettings = {
   brand: { name: string; suffix: string; logoUrl: string; tagline: string };
@@ -19,6 +19,7 @@ export type SiteSettings = {
     background: string;
     surface: string;
     ink: string;
+    muted: string;
     line: string;
     cardRadius: number;
     buttonRadius: number;
@@ -39,10 +40,15 @@ export type SiteSettings = {
     themeToggle: boolean;
   };
   legal: { terms: LegalPage; privacy: LegalPage; cookies: LegalPage };
+  // Sube cuando cambia el copy de producto: obliga a reemplazar textos guardados antiguos.
+  copyVersion?: number;
+  // Sube cuando cambia la identidad de marca: reemplaza marca, paleta y tema oscuro guardados.
+  identityVersion?: number;
   updatedAt: string;
 };
 
 export const FONT_PRESETS: { id: FontPreset; label: string }[] = [
+  { id: "biohostels", label: "Biohostels (Montserrat / Playfair / Inter)" },
   { id: "inter", label: "Inter / SF Pro" },
   { id: "system", label: "Sistema (Segoe UI / SF)" },
   { id: "geometric", label: "Geométrica (Avenir / Century Gothic)" },
@@ -50,20 +56,63 @@ export const FONT_PRESETS: { id: FontPreset; label: string }[] = [
   { id: "rounded", label: "Redondeada (Nunito / Trebuchet)" },
 ];
 
-export const FONT_STACKS: Record<FontPreset, string> = {
-  inter: `"Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`,
-  system: `-apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`,
-  geometric: `"Avenir Next", "Century Gothic", Futura, "Trebuchet MS", "Segoe UI", Roboto, sans-serif`,
-  humanist: `Optima, Candara, "Segoe UI", "Helvetica Neue", Arial, sans-serif`,
-  rounded: `"Nunito", "Avenir Next Rounded", "Trebuchet MS", "Segoe UI", Roboto, sans-serif`,
+export type FontStacks = { heading: string; body: string; serif: string };
+
+export const FONT_STACKS: Record<FontPreset, FontStacks> = {
+  biohostels: {
+    heading: `var(--font-montserrat, "Montserrat"), "Montserrat", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`,
+    body: `var(--font-inter, "Inter"), "Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`,
+    serif: `var(--font-playfair, "Playfair Display"), "Playfair Display", Georgia, "Times New Roman", serif`,
+  },
+  inter: {
+    heading: `"Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`,
+    body: `"Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`,
+    serif: `"Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
+  },
+  system: {
+    heading: `-apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`,
+    body: `-apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`,
+    serif: `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
+  },
+  geometric: {
+    heading: `"Avenir Next", "Century Gothic", Futura, "Trebuchet MS", "Segoe UI", Roboto, sans-serif`,
+    body: `"Avenir Next", "Century Gothic", Futura, "Trebuchet MS", "Segoe UI", Roboto, sans-serif`,
+    serif: `"Avenir Next", "Century Gothic", Futura, "Trebuchet MS", "Segoe UI", Roboto, sans-serif`,
+  },
+  humanist: {
+    heading: `Optima, Candara, "Segoe UI", "Helvetica Neue", Arial, sans-serif`,
+    body: `Optima, Candara, "Segoe UI", "Helvetica Neue", Arial, sans-serif`,
+    serif: `Optima, Candara, "Segoe UI", "Helvetica Neue", Arial, sans-serif`,
+  },
+  rounded: {
+    heading: `"Nunito", "Avenir Next Rounded", "Trebuchet MS", "Segoe UI", Roboto, sans-serif`,
+    body: `"Nunito", "Avenir Next Rounded", "Trebuchet MS", "Segoe UI", Roboto, sans-serif`,
+    serif: `"Nunito", "Avenir Next Rounded", "Trebuchet MS", "Segoe UI", Roboto, sans-serif`,
+  },
 };
 
 type Palette = Pick<
   SiteSettings["design"],
   "primary" | "primaryDeep" | "accent" | "lime" | "background" | "surface" | "ink" | "line"
->;
+> & { muted?: string };
 
 export const THEME_PRESETS: { id: string; label: string; light: Palette; dark: SiteSettings["dark"] }[] = [
+  {
+    id: "biohostels",
+    label: "Biohostels (manual de identidad)",
+    light: {
+      primary: "#1b4d3e",
+      primaryDeep: "#0f3328",
+      accent: "#00c9a7",
+      lime: "#d4a373",
+      background: "#fafaf7",
+      surface: "#ffffff",
+      ink: "#1a1a1a",
+      muted: "#4a4a4a",
+      line: "#e6e1d5",
+    },
+    dark: { background: "#0b1512", surface: "#12211b", ink: "#eaf2ec", primary: "#4fc08d", accent: "#00c9a7", line: "#22463a" },
+  },
   {
     id: "selva",
     label: "Selva",
@@ -143,69 +192,71 @@ export const THEME_PRESETS: { id: string; label: string; light: Palette; dark: S
 
 const TERMS: LegalPage = {
   title: "Términos y Condiciones",
-  intro: "Documento vigente a partir del 25 de octubre de 2026. Modificado a discreción de BioHostel Digital S.A.",
+  intro: "Vigente desde el 1 de noviembre de 2026 · versión 2026-11-01.",
+  version: "2026-11-01",
   sections: [
-    { title: "1. Aceptación de los Términos", body: "Al acceder y utilizar BioHostel.com usted acepta los presentes términos. Si no está de acuerdo, no utilice el servicio." },
-    { title: "2. Definición de Servicio", body: "BioHostel es un marketplace de alojamientos de temporada (reservas, departamentos, casas, habitaciones). El operador es BioHostel Digital S.A. constituido en Colombia." },
-    { title: "3. Inscripción de Anfitriones", body: "Para publicar un alojamiento debe registrarse con correo, nombre, identificación y verificación de dominio de propiedad. Se solicita foto de cédula, constancia de propiedad y verificación de servicios." },
-    { title: "4. Inscripción de Huéspedes", body: "El huésped debe ser mayor de 18 años, crear cuenta, reservar con datos verificados, pagar según las condiciones y respetar las normas de la casa." },
-    { title: "5. Condiciones de la Reserva", body: "Reserva: fecha entrada/salida, número de huéspedes, servicios. Pago: seguro y total con anticipación según pauta de la plataforma. Cancelación según la Política de la Casa publicada." },
-    { title: "6. Políticas del Anfitrión", body: "Cada casa publica: fecha de chequeo, claves, prohibiciones, lavandería, uso de cigarrillo, mascotas, normas de convivencia. El anfitrión debe mantener el alojamiento en condiciones adecuadas." },
-    { title: "7. Seguridad y Privacidad", body: "Se recogen Datos Personales con el propósito de atender la reserva. No se comparten con terceros excepto proveedores contractuales. Acceso, rectificación y eliminación de datos disponibles en la sección de Privacidad." },
-    { title: "8. Contenidos e Infracciones", body: "No se permiten publicaciones que contengan difamación, abuso, pornografía, armas, drogas o infracciones de orden público. Las publicaciones de las víctimas de la infidelidad tienen prioridad y no se permiten difundir sin consentimiento." },
-    { title: "9. Propiedad Intelectual", body: "Todo el contenido del sitio (textos, imágenes, logos, marcas) es propiedad de BioHostel Digital S.A. Se otorga licencia personal y no exclusiva para uso de consulta." },
-    { title: "10. Limitación de Responsabilidad", body: "La información es orientativa. BioHostel no se hace responsable de errores tipográficos, imprecisión de precios o disponibilidad fuera de fecha real. El anfitrión y huésped son responsables entre sí." },
-    { title: "11. Fianzas y Resolución de Reclamos", body: "En virtud del Decreto 1065 de 2015, BioHostel opera en el marco de la resolución de conflictos en reservas turísticas y puede retener fianzas en casos de incumplimiento." },
-    { title: "12. Derecho Aplicable", body: "Las presentes normas se rigen por la legislación colombiana. Todo litigio se presenta ante los tribunales competentes de la sede social." },
+    { title: "1. Aceptación", body: "Al usar biohostels.com aceptas estos términos. Si no estás de acuerdo, no uses el servicio." },
+    { title: "2. Qué es Biohostels", body: "Biohostels es una plataforma para publicar y reservar alojamientos en Colombia. No somos hotel, arrendador ni agencia de viajes: el contrato de alojamiento se celebra directamente entre anfitrión y huésped." },
+    { title: "3. Publicación de alojamientos", body: "Para publicar debes crear una cuenta y registrar el número de RNT del alojamiento, que se muestra en su ficha (Decreto 1836 de 2021). Si publicas un subarriendo, debes declarar y adjuntar la autorización escrita del propietario (Ley 820 de 2003, art. 17); ese documento se guarda de forma privada y no se publica. Biohostels puede pausar o retirar publicaciones sin RNT o sin la autorización exigida." },
+    { title: "4. Cuenta de huésped", body: "Debes ser mayor de 18 años, usar datos veraces y respetar las reglas de la casa. Puedes reservar con cuenta o, cuando la ficha lo permita, sin cuenta indicando nombre, correo y teléfono." },
+    { title: "5. Reservas y pagos", body: "La plataforma registra la solicitud de reserva y bloquea las fechas. Cuando el pago en línea está habilitado, se procesa con la pasarela Wompi y la reserva se confirma únicamente cuando Wompi reporta el pago aprobado; mientras tanto, las fechas quedan retenidas por 30 minutos. Si no está habilitado, el pago se coordina directamente con el anfitrión. Biohostels no almacena números de tarjeta ni datos financieros completos. La cancelación se rige por la política publicada en cada ficha." },
+    { title: "6. Disponibilidad", body: "La disponibilidad se calcula con las reservas de Biohostels (incluidas las retenciones temporales por pago pendiente) y con los calendarios iCal que el anfitrión conecta desde Booking, Airbnb u otras plataformas. Esos calendarios se actualizan de forma perezosa al consultar disponibilidad o reservar, y el anfitrión también puede sincronizarlos manualmente. No es una verificación en tiempo real de esas plataformas: puede haber desfases si el calendario externo no se actualiza. El servidor vuelve a validar antes de confirmar una reserva." },
+    { title: "7. Privacidad", body: "Tratamos tus datos conforme a la Política de Privacidad y a la Ley 1581 de 2012. Puedes acceder, rectificar, suprimir y revocar tu consentimiento escribiendo a datos@biohostels.com." },
+    { title: "8. Contenido prohibido", body: "No se permite publicar contenido difamatorio, discriminatorio, sexual, violento, ilícito ni que infrinja derechos de terceros. Podemos retirar el contenido y suspender la cuenta." },
+    { title: "9. Propiedad intelectual", body: "Los textos, imágenes, marcas y el código del sitio pertenecen a sus titulares. Se otorga una licencia personal y no exclusiva para consultar el sitio." },
+    { title: "10. Responsabilidad", body: "La información de cada ficha es responsabilidad del anfitrión, incluidos el RNT, la autorización de subarriendo, los precios y la disponibilidad. Biohostels no garantiza la calidad del alojamiento ni la exactitud de calendarios externos. Nada en estos términos limita los derechos que la Ley 1480 de 2011 reconoce a los consumidores." },
+    { title: "11. Quejas y reclamos", body: "Puedes escribir a datos@biohostels.com. También puedes acudir a la Superintendencia de Industria y Comercio (SIC) en los términos de la Ley 1480 de 2011." },
+    { title: "12. Ley aplicable", body: "Estos términos se rigen por la legislación colombiana. Las controversias se someten a los jueces competentes en Colombia." },
   ],
 };
 
 const PRIVACY: LegalPage = {
   title: "Política de Privacidad",
-  intro: "Vigente a partir del 25 de octubre de 2026. Última actualización: 25 de octubre de 2026.",
+  intro: "Vigente desde el 1 de noviembre de 2026 · versión 2026-11-01.",
+  version: "2026-11-01",
   sections: [
-    { title: "1. Datos Personales", body: "BioHostel Digital S.A. (el “Contralor”) recopila, utiliza y protege sus Datos Personales en el marco del cuidado de la reserva. Propietario de los registros: BioHostel Digital S.A., Av. Caracas 123, Bogotá D.C., Colombia. Correo de contacto del Contralor: datos@biohostel.com." },
-    { title: "2. Datos que recopila", body: "Durante el sitio recopila: (a) identificativos personales (nombre, correo, teléfono); (b) datos de la reserva y de la casa; (c) datos de pago (procesados por terceros autorizados); (d) datos de interacción, configuración y cookies." },
-    { title: "3. Finalidades del tratamiento", body: "(a) Atención al cliente y gestión de reservas; (b) Comunicación institucional; (c) Cumplimiento fiscal y legal; (d) Mejora del servicio; (e) Prevención de fraudes; (f) Contacto con el anfitrión u hosts." },
-    { title: "4. Base jurídica", body: "(a) Ejecución de un contrato; (b) Obligación legal; (c) Consentimiento expreso; (d) Interés legítimo (seguridad y prevención de fraude); (e) Legado." },
-    { title: "5. Destinatarios", body: "Datos se comparten con proveedores autorizados: bancos y procesadores de pagos, redes de alojamiento, servicios de mensajería y proofs de identidad. No vende, enajena ni transfiere Datos sin su consentimiento." },
-    { title: "6. Cookies y tecnologías similares", body: "El sitio utiliza cookies propias y de terceros para funcionalidad, analítica y personalización. Puede rechazar cookies; el sitio sigue funcionando en modo básico. Consulte la cookie policy." },
-    { title: "7. Seguridad", body: "El Contralor implementa medidas de seguridad técnicas y organizacionales (criptografía TLS, control de acceso, auditoría, backups, políticas de acceso mínimo). Los datos se encriptan en tránsito y en reposo." },
-    { title: "8. Derechos ARCO", body: "Tiene derecho de acceso, rectificación, cancelación, oposición, limitación del tratamiento, portabilidad y lectura de datos. Para ejercer: escriba a datos@biohostel.com con su correo y documento de identidad, indicando el derecho ARCO." },
-    { title: "9. Retención", body: "Datos se conservan durante la vigencia del contrato y durante el plazo legal que corresponda (generalmente 5 años para asuntos fiscales y 2 años para contratos). Luego se eliminan de forma segura." },
-    { title: "10. Envío a terceros", body: "No destina Datos a terceros por ganancia comercial. En caso de adquisición, fusión o transferencia, se notificará y se garantizará el tratamiento conforme a la normativa vigente." },
-    { title: "11. Tratamiento de datos de menores", body: "El sitio no está orientado a menores de 18 años. Si usted es menor, no proporcione datos sin autorización de un responsable." },
-    { title: "12. Cambios a la política", body: "El Contralor puede actualizar esta Política. Notificaciones se publican en el sitio. Usuario deberá revisar este documento periódicamente." },
+    { title: "1. Responsable del tratamiento", body: "Biohostels, operador de biohostels.com. Contacto para datos personales: datos@biohostels.com. Tratamos los datos conforme a la Ley 1581 de 2012 y el Decreto 1377 de 2013 (compilado en el Decreto 1074 de 2015)." },
+    { title: "2. Datos que tratamos", body: "(a) Cuenta: nombre, correo y contraseña cifrada. (b) Reserva: nombre, correo, teléfono, fechas, huéspedes y alojamiento. (c) Pago: estado de la transacción, referencia, método y monto; no almacenamos números de tarjeta. (d) Cumplimiento: RNT del alojamiento y, para subarriendos, la autorización escrita del propietario. (e) Consentimiento: fecha, versión de esta política, finalidades, dirección IP y agente de usuario. (f) Preferencias de uso del sitio." },
+    { title: "3. Finalidades", body: "Gestionar tu cuenta y la reserva solicitada; contactarte sobre el alojamiento y la reserva; prevenir fraude y proteger la seguridad del servicio; cumplir obligaciones legales y atender requerimientos de autoridad." },
+    { title: "4. Base legal", body: "Tu consentimiento expreso al registrarte o reservar; la ejecución del contrato de alojamiento; el cumplimiento de obligaciones legales; y el interés legítimo en seguridad y prevención de fraude. Puedes revocar el consentimiento, sin efecto retroactivo, escribiendo a datos@biohostels.com." },
+    { title: "5. Documentos de cumplimiento", body: "La autorización de subarriendo puede contener datos del propietario. Se almacena en un espacio privado, separada del almacenamiento público de imágenes, y solo el anfitrión dueño de la publicación y el administrador pueden consultarla. No se publica ni se comparte con huéspedes." },
+    { title: "6. Destinatarios", body: "Usamos proveedores de infraestructura (alojamiento, base de datos, almacenamiento y correo transaccional) que tratan los datos por nuestra cuenta. Cuando el pago en línea está habilitado, la pasarela Wompi procesa los datos necesarios para autorizar la transacción bajo sus propias políticas. No vendemos datos personales. Podemos entregarlos cuando una autoridad competente lo exija." },
+    { title: "7. Conservación", body: "Conservamos los datos de la cuenta mientras esté activa, los de la reserva durante los plazos legales aplicables y los registros de consentimiento mientras sea necesario para demostrar su existencia. Luego se eliminan o anonimizan." },
+    { title: "8. Tus derechos", body: "Puedes conocer, actualizar, rectificar, suprimir y revocar el consentimiento sobre tus datos, y presentar quejas ante la Superintendencia de Industria y Comercio (SIC). Escríbenos a datos@biohostels.com indicando tu solicitud." },
+    { title: "9. Seguridad", body: "Aplicamos cifrado en tránsito (TLS), contraseñas con derivación PBKDF2, control de acceso a la base de datos y separación entre archivos públicos y privados. Ningún sistema es infalible; si ocurre un incidente relevante lo comunicaremos a los afectados y a la autoridad cuando corresponda." },
+    { title: "10. Cookies y almacenamiento local", body: "Usamos una cookie técnica de sesión (bio_session) para mantener tu cuenta y preferencias guardadas en tu navegador. No usamos cookies publicitarias ni de análisis de terceros en esta versión. Puedes borrar las cookies desde tu navegador; la sesión se cerrará." },
+    { title: "11. Menores de edad", body: "El servicio no está dirigido a menores de 18 años. No solicites ni proporciones datos de menores." },
+    { title: "12. Cambios", body: "Si cambiamos esta política, publicaremos una nueva versión con su fecha. La versión aceptada queda registrada en tu cuenta y en el registro de consentimientos." },
   ],
 };
 
 const COOKIES: LegalPage = {
   title: "Política de Cookies",
-  intro: "Vigente a partir del 25 de octubre de 2026. Última actualización: 25 de octubre de 2026.",
+  intro: "Vigente desde el 1 de noviembre de 2026 · versión 2026-11-01.",
+  version: "2026-11-01",
   sections: [
-    { title: "1. ¿Qué son las cookies?", body: "Las cookies son pequeños archivos de texto que se almacenan en su dispositivo al navegar por nuestro sitio. Permiten funcionalidades esenciales, análisis de tráfico y personalización de contenidos." },
-    { title: "2. Tipos de cookies que utilizamos", body: "Cookies técnicas/estrictas: indispensables para el funcionamiento del sitio, autenticación y seguridad. Cookies de preferencias: recuerdan sus elecciones (idioma, moneda, configuración). Cookies de análisis: nos permiten entender cómo interactúa con el sitio (Google Analytics u otros proveedores de métricas). Cookies de marketing: para mostrar publicidad relevante basada en su navegación (si prefiere no recibir publicidad, puede desactivarlas)." },
-    { title: "3. Cookies de terceros", body: "Al navegar por nuestro sitio, es posible que vea contenido de terceros (videos, redes sociales, publicidad). Además de las propias, podrían instalar cookies de estos proveedores. Revise las políticas de privacidad de cada servicio para conocer el tratamiento de datos. Las cookies de Google Analytics se configuran desde Google Privacy & Terms." },
-    { title: "4. Tabla de cookies", body: "En la tabla siguiente se indican las cookies implementadas. El usuario puede revocar el consentimiento en cualquier momento a través de la configuración de su navegador." },
-    { title: "5. Gestión de cookies", body: "Puede aceptar, rechazar o configurar cookies en su navegador. La mayoría de los navegadores modernos permiten manejar cookies vía: Chrome (Config > Privacidad y seguridad), Firefox (Config > Privacidad y seguridad), Safari (Preferencias > Seguridad). También puede usar “Do Not Track” si su navegador lo soporta." },
-    { title: "6. Cambios a esta política", body: "El Contralor puede modificar esta política de cookies. Las modificaciones se publicarán en el sitio. El usuario se mantiene informado sobre los cambios; continuar navegando después de la modificación se considera aceptación." },
+    { title: "1. Qué son", body: "Son archivos pequeños que el navegador guarda para recordar información entre visitas. También usamos almacenamiento local para preferencias como el tema y la moneda." },
+    { title: "2. Cookies que usamos", body: "Cookie técnica bio_session: mantiene tu sesión iniciada y es indispensable para la cuenta. Preferencias (tema claro/oscuro y moneda): se guardan en tu navegador. No usamos cookies publicitarias ni de análisis de terceros en esta versión." },
+    { title: "3. Terceros", body: "El sitio carga imágenes y mapas desde proveedores externos (por ejemplo, Unsplash y Google Maps), que pueden recibir la dirección IP de tu navegador al mostrar el contenido. Revisa sus políticas de privacidad." },
+    { title: "4. Cómo gestionarlas", body: "Puedes eliminarlas o bloquearlas desde la configuración de tu navegador (Chrome, Firefox, Safari o Edge, sección Privacidad). Si bloqueas la cookie de sesión, no podrás iniciar sesión ni publicar." },
+    { title: "5. Cambios", body: "Si incorporamos analítica o publicidad, actualizaremos esta política y pediremos el consentimiento que corresponda antes de activarlas." },
   ],
 };
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   brand: {
-    name: "biohostel",
-    suffix: ".COM",
+    name: "Biohostels",
+    suffix: ".com",
     logoUrl: "",
-    tagline: "Reserva hostels y subarriendos con IA",
+    tagline: "Tecnología que regenera",
   },
-  announcement: "BIOHOSTEL.COM · 1 RESERVA = 1 ÁRBOL · SINCRONIZADO CON BOOKING + AIRBNB",
+  announcement: "BIOHOSTELS.COM · RESERVAS DIRECTAS · CALENDARIOS iCal DE BOOKING + AIRBNB",
   hero: {
     eyebrow: "COMO BOOKING + AIRBNB, PERO VERDE",
-    title: "Reserva hostels y subarriendos con IA que evita overbooking.",
+    title: "Reserva hostels y subarriendos con calendarios conectados.",
     highlight: "y subarriendos",
     subtitle:
-      "Antes de cobrar, la IA verifica tus fechas en Booking y Airbnb. Si está ocupado, te sugiere otro día o lugar. Si está libre, reserva y bloquea las otras plataformas.",
+      "Cruzamos tus fechas con las reservas de Biohostels.com y los calendarios iCal que cada anfitrión importa desde Booking o Airbnb. Si hay conflicto te proponemos alternativas; si está libre, confirmamos y generamos el bloqueo para exportarlo.",
     image: "",
   },
   nav: [
@@ -217,7 +268,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   ],
   footer: {
     text: "Hecho en Colombia · 1 reserva = 1 árbol",
-    contactEmail: "hola@biohostel.com",
+    contactEmail: "hola@biohostels.com",
     links: [
       { label: "Panel anfitrión", href: "/panel" },
       { label: "Términos", href: "/terminos" },
@@ -227,32 +278,33 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
     socials: [],
   },
   design: {
-    primary: "#15803d",
-    primaryDeep: "#0f2d1e",
-    accent: "#10b981",
-    lime: "#84cc16",
-    background: "#f6f8f3",
+    primary: "#1b4d3e",
+    primaryDeep: "#0f3328",
+    accent: "#00c9a7",
+    lime: "#d4a373",
+    background: "#fafaf7",
     surface: "#ffffff",
-    ink: "#0f1f17",
-    line: "#d5e2d4",
+    ink: "#1a1a1a",
+    muted: "#4a4a4a",
+    line: "#e6e1d5",
     cardRadius: 20,
     buttonRadius: 999,
     inputRadius: 10,
-    font: "inter",
+    font: "biohostels",
     defaultTheme: "light",
   },
   dark: {
-    background: "#09120d",
-    surface: "#112018",
-    ink: "#ecf7ee",
-    primary: "#4ade80",
-    accent: "#34d399",
-    line: "#213d2b",
+    background: "#0b1512",
+    surface: "#12211b",
+    ink: "#eaf2ec",
+    primary: "#4fc08d",
+    accent: "#00c9a7",
+    line: "#22463a",
   },
   seo: {
-    title: "BioHostel.com · Reserva hostels y subarriendos",
+    title: "Biohostels.com · Reserva hostels y subarriendos",
     description:
-      "El booking verde: reservas por noche y subarriendos mensuales con IA que sincroniza Booking y Airbnb, perfiles sociales y planes para anfitriones.",
+      "El booking verde de Colombia: reservas por noche y subarriendos mensuales con calendarios iCal de Booking y Airbnb, perfiles de anfitriones y planes para alojamientos.",
     ogImage: "",
   },
   modules: {
@@ -266,6 +318,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
     themeToggle: true,
   },
   legal: { terms: TERMS, privacy: PRIVACY, cookies: COOKIES },
+  copyVersion: 2,
+  identityVersion: 1,
   updatedAt: new Date().toISOString(),
 };
 
@@ -347,8 +401,15 @@ function mergeLegal(v: unknown, base: LegalPage): LegalPage {
   return {
     title: txt(o.title, base.title, 160),
     intro: txt(o.intro, base.intro, 1200),
+    version: txt(o.version, base.version ?? "", 40) || undefined,
     sections,
   };
+}
+
+function mergeLegalVersioned(v: unknown, base: LegalPage): LegalPage {
+  const stored = asObject(v);
+  if (!base.version || stored.version !== base.version) return base;
+  return mergeLegal(v, base);
 }
 
 export function mergeSiteSettings(raw: unknown, base: SiteSettings = DEFAULT_SITE_SETTINGS): SiteSettings {
@@ -361,57 +422,66 @@ export function mergeSiteSettings(raw: unknown, base: SiteSettings = DEFAULT_SIT
   const seo = asObject(r.seo);
   const modules = asObject(r.modules);
   const legal = asObject(r.legal);
+  const copyCurrent = Number(r.copyVersion) === (base.copyVersion ?? 0);
+  // Mientras la fila guardada sea de otra identidad, marca y paleta vuelven al manual vigente.
+  const identityCurrent = Number(r.identityVersion) === (base.identityVersion ?? 0);
 
   return {
     brand: {
-      name: txt(brand.name, base.brand.name, 60),
-      suffix: txt(brand.suffix, base.brand.suffix, 24),
-      logoUrl: imageUrl(brand.logoUrl, base.brand.logoUrl),
-      tagline: txt(brand.tagline, base.brand.tagline, 180),
+      name: identityCurrent ? txt(brand.name, base.brand.name, 60) : base.brand.name,
+      suffix: identityCurrent ? txt(brand.suffix, base.brand.suffix, 24) : base.brand.suffix,
+      logoUrl: identityCurrent ? imageUrl(brand.logoUrl, base.brand.logoUrl) : base.brand.logoUrl,
+      tagline: copyCurrent && identityCurrent ? txt(brand.tagline, base.brand.tagline, 180) : base.brand.tagline,
     },
-    announcement: txt(r.announcement, base.announcement, 320),
-    hero: {
+    announcement: copyCurrent ? txt(r.announcement, base.announcement, 320) : base.announcement,
+    hero: copyCurrent ? {
       eyebrow: txt(hero.eyebrow, base.hero.eyebrow, 140),
       title: txt(hero.title, base.hero.title, 200),
       highlight: txt(hero.highlight, base.hero.highlight, 140),
       subtitle: txt(hero.subtitle, base.hero.subtitle, 700),
       image: imageUrl(hero.image, base.hero.image),
-    },
+    } : base.hero,
     nav: Array.isArray(r.nav) ? parseLinks(r.nav, 14) : base.nav,
     footer: {
       text: txt(footer.text, base.footer.text, 320),
-      contactEmail: txt(footer.contactEmail, base.footer.contactEmail, 180),
+      // El correo de contacto lleva el dominio de la marca: con otra identidad vuelve al default.
+      contactEmail: identityCurrent ? txt(footer.contactEmail, base.footer.contactEmail, 180) : base.footer.contactEmail,
       links: Array.isArray(footer.links) ? parseLinks(footer.links, 14) : base.footer.links,
       socials: Array.isArray(footer.socials) ? parseSocials(footer.socials) : base.footer.socials,
     },
-    design: {
-      primary: color(design.primary, base.design.primary),
-      primaryDeep: color(design.primaryDeep, base.design.primaryDeep),
-      accent: color(design.accent, base.design.accent),
-      lime: color(design.lime, base.design.lime),
-      background: color(design.background, base.design.background),
-      surface: color(design.surface, base.design.surface),
-      ink: color(design.ink, base.design.ink),
-      line: color(design.line, base.design.line),
-      cardRadius: num(design.cardRadius, base.design.cardRadius, 0, 40),
-      buttonRadius: num(design.buttonRadius, base.design.buttonRadius, 0, 999),
-      inputRadius: num(design.inputRadius, base.design.inputRadius, 0, 40),
-      font: isFont(design.font) ? design.font : base.design.font,
-      defaultTheme: design.defaultTheme === "dark" || design.defaultTheme === "light" ? design.defaultTheme : base.design.defaultTheme,
-    },
-    dark: {
-      background: color(dark.background, base.dark.background),
-      surface: color(dark.surface, base.dark.surface),
-      ink: color(dark.ink, base.dark.ink),
-      primary: color(dark.primary, base.dark.primary),
-      accent: color(dark.accent, base.dark.accent),
-      line: color(dark.line, base.dark.line),
-    },
-    seo: {
+    design: identityCurrent
+      ? {
+          primary: color(design.primary, base.design.primary),
+          primaryDeep: color(design.primaryDeep, base.design.primaryDeep),
+          accent: color(design.accent, base.design.accent),
+          lime: color(design.lime, base.design.lime),
+          background: color(design.background, base.design.background),
+          surface: color(design.surface, base.design.surface),
+          ink: color(design.ink, base.design.ink),
+          muted: color(design.muted, base.design.muted),
+          line: color(design.line, base.design.line),
+          cardRadius: num(design.cardRadius, base.design.cardRadius, 0, 40),
+          buttonRadius: num(design.buttonRadius, base.design.buttonRadius, 0, 999),
+          inputRadius: num(design.inputRadius, base.design.inputRadius, 0, 40),
+          font: isFont(design.font) ? design.font : base.design.font,
+          defaultTheme: design.defaultTheme === "dark" || design.defaultTheme === "light" ? design.defaultTheme : base.design.defaultTheme,
+        }
+      : base.design,
+    dark: identityCurrent
+      ? {
+          background: color(dark.background, base.dark.background),
+          surface: color(dark.surface, base.dark.surface),
+          ink: color(dark.ink, base.dark.ink),
+          primary: color(dark.primary, base.dark.primary),
+          accent: color(dark.accent, base.dark.accent),
+          line: color(dark.line, base.dark.line),
+        }
+      : base.dark,
+    seo: copyCurrent ? {
       title: txt(seo.title, base.seo.title, 160),
       description: txt(seo.description, base.seo.description, 400),
       ogImage: imageUrl(seo.ogImage, base.seo.ogImage),
-    },
+    } : base.seo,
     modules: {
       plans: bool(modules.plans, base.modules.plans),
       profiles: bool(modules.profiles, base.modules.profiles),
@@ -423,15 +493,18 @@ export function mergeSiteSettings(raw: unknown, base: SiteSettings = DEFAULT_SIT
       themeToggle: bool(modules.themeToggle, base.modules.themeToggle),
     },
     legal: {
-      terms: mergeLegal(legal.terms, base.legal.terms),
-      privacy: mergeLegal(legal.privacy, base.legal.privacy),
-      cookies: mergeLegal(legal.cookies, base.legal.cookies),
+      // Si la versión guardada es anterior, se reemplaza por el texto vigente.
+      terms: mergeLegalVersioned(legal.terms, base.legal.terms),
+      privacy: mergeLegalVersioned(legal.privacy, base.legal.privacy),
+      cookies: mergeLegalVersioned(legal.cookies, base.legal.cookies),
     },
+    copyVersion: base.copyVersion,
+    identityVersion: base.identityVersion,
     updatedAt: typeof r.updatedAt === "string" ? r.updatedAt : base.updatedAt,
   };
 }
 
-function readableOn(hex: string): string {
+export function readableOn(hex: string): string {
   const h = hex.replace("#", "");
   const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
   const n = parseInt(full, 16);
@@ -444,11 +517,12 @@ function readableOn(hex: string): string {
 }
 
 export function siteThemeCss(s: SiteSettings): string {
-  const font = FONT_STACKS[s.design.font] ?? FONT_STACKS.inter;
+  const fonts = FONT_STACKS[s.design.font] ?? FONT_STACKS.biohostels;
   const onDeep = readableOn(s.design.primaryDeep);
   const onDark = readableOn(s.dark.background);
   const onPrimary = readableOn(s.design.primary);
   const onDarkPrimary = readableOn(s.dark.primary);
+  const primarySolid = `linear-gradient(135deg, ${s.design.primary}, color-mix(in srgb, ${s.design.primary} 78%, black))`;
 
   return [
     ":root{",
@@ -464,13 +538,13 @@ export function siteThemeCss(s: SiteSettings): string {
     `--ink:${s.design.ink}!important;`,
     `--heading:${s.design.ink}!important;`,
     `--line:${s.design.line}!important;`,
-    `--muted:color-mix(in srgb, ${s.design.ink} 62%, ${s.design.background})!important;`,
+    `--muted:${s.design.muted}!important;`,
     `--tint:color-mix(in srgb, ${s.design.primary} 12%, ${s.design.background})!important;`,
     `--warm-cream:color-mix(in srgb, ${s.design.background} 90%, white)!important;`,
     `--paper:color-mix(in srgb, ${s.design.background} 88%, ${s.design.ink} 4%)!important;`,
     `--sand:color-mix(in srgb, ${s.design.background} 84%, ${s.design.ink} 7%)!important;`,
     `--header:color-mix(in srgb, ${s.design.background} 88%, transparent)!important;`,
-    `--display:${font}!important;--sans:${font}!important;`,
+    `--display:${fonts.heading}!important;--sans:${fonts.body}!important;--serif:${fonts.serif}!important;`,
     `--radius-card:${s.design.cardRadius}px!important;`,
     `--radius-btn:${s.design.buttonRadius}px!important;`,
     `--radius-input:${s.design.inputRadius}px!important;`,
@@ -496,9 +570,9 @@ export function siteThemeCss(s: SiteSettings): string {
     `.lcard,.plan,.profile,.kpi,.ad,.pack,.sponsor,.modal,.searchcard,.udropdown,.aibox{border-radius:var(--radius-card)!important;}`,
     `.btn,.pill{border-radius:var(--radius-btn)!important;}`,
     `input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]),select,textarea{border-radius:var(--radius-input)!important;}`,
-    `.brand-mark{background:linear-gradient(135deg, ${s.design.primary}, ${s.design.accent})!important;color:${onPrimary}!important;}`,
-    `.btn-green{background:linear-gradient(135deg, ${s.design.primary}, ${s.design.accent})!important;color:${onPrimary}!important;}`,
-    `.pill.on{background:linear-gradient(135deg, ${s.design.primary}, ${s.design.accent})!important;color:${onPrimary}!important;border-color:transparent!important;}`,
+    `.brand-mark{background:color-mix(in srgb, ${s.design.primary} 8%, ${s.design.surface})!important;color:${s.design.primary}!important;}`,
+    `.btn-green{background:${primarySolid}!important;color:${onPrimary}!important;}`,
+    `.pill.on{background:${primarySolid}!important;color:${onPrimary}!important;border-color:transparent!important;}`,
     `[data-theme="dark"] .btn-green{background:${s.dark.primary}!important;color:${onDarkPrimary}!important;}`,
     `[data-theme="dark"] .pill.on{background:${s.dark.primary}!important;color:${onDarkPrimary}!important;border-color:transparent!important;}`,
     `.topbar{background:${s.design.primaryDeep}!important;color:${onDeep}!important;}`,

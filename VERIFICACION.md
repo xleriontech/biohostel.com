@@ -7,7 +7,7 @@
    - Sección Experiencias (Naturaleza / Yoga / Gastronomía)
    - Sticky CTA (Reservar -> #reserva)
    - ReservaForm (Client Component, Suspense)
-   - Footer independiente (Botón BioHostel.com + Google Maps)
+   - Footer independiente (Botón Biohostels.com + Google Maps)
    - Schema.org (LodgingBusiness + AggregateRating)
 
 2. MOTOR DE RESERVAS ENFOCADO:

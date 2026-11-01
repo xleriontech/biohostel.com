@@ -10,13 +10,49 @@ import { AuthModal } from "./auth-modal";
 import { Icon, type IconName } from "./icons";
 import { useCurrency } from "@/lib/currency";
 import { Brand } from "./brand";
+import { BiohostelsMark, BiohostelsSeal } from "@/components/biohostels-brand";
 import { useSiteSettings } from "./site-settings-context";
 
 type User = { id: string; name: string; email: string; plan: PlanId; role?: string; favorites: string[]; follows: string[] };
-type Booking = { id: string; code: string; listingTitle: string; checkIn: string; checkOut: string; guests: number; base: number; commission: number; total: number; status: string; aiReport: string; createdAt: string };
+type Booking = {
+  id: string;
+  code: string;
+  listingTitle: string;
+  checkIn: string;
+  checkOut: string;
+  guests: number;
+  base: number;
+  commission: number;
+  total: number;
+  status: string;
+  aiReport: string;
+  createdAt: string;
+  holdUntil?: string;
+  holdExpired?: boolean;
+  payment?: { provider: string; status: string; checkoutUrl?: string; reference?: string };
+};
+
+type AvailabilityResult = {
+  listingId: string;
+  slug: string;
+  available: boolean;
+  reason: string | null;
+  issues: { code: string; message: string }[];
+  conflicts: { platform: string; dates: string[] }[];
+};
 
 function normalizeText(s: string) {
   return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function bookingStatus(b: Booking): { label: string; tone: "ok" | "warn" | "off" } {
+  if (b.status === "confirmada") return { label: "Confirmada", tone: "ok" };
+  if (b.status === "pendiente_pago") {
+    return b.holdExpired
+      ? { label: "Retención vencida", tone: "off" }
+      : { label: "Pago pendiente", tone: "warn" };
+  }
+  return { label: "Cancelada", tone: "off" };
 }
 
 // alias para compatibilidad
@@ -144,6 +180,9 @@ export default function Site({ defaultCheckIn, defaultCheckOut }: { defaultCheck
   const [serverListings, setServerListings] = useState<Listing[] | null>(null);
   const [bookingsOpen, setBookingsOpen] = useState(false);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [availability, setAvailability] = useState<Record<string, AvailabilityResult> | null>(null);
+  const [availDates, setAvailDates] = useState<{ checkIn: string; checkOut: string } | null>(null);
+  const [availLoading, setAvailLoading] = useState(false);
   const [lead, setLead] = useState<{ tipo: string; titulo: string; detalle: string } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [faqOpen, setFaqOpen] = useState<number | null>(0);
@@ -174,11 +213,14 @@ export default function Site({ defaultCheckIn, defaultCheckOut }: { defaultCheck
 
   const todas = useMemo(() => serverListings ?? LISTINGS, [serverListings]);
   const ciudades = useMemo(() => ["Todas", ...Array.from(new Set(todas.map((l) => l.ciudad)))], [todas]);
+  const availActive = !!availability && !!availDates && availDates.checkIn === checkIn && availDates.checkOut === checkOut;
+  const availMap = availActive ? availability : null;
   const filtrados = todas.filter((l) => {
     const okQ = !q || normalizeText(l.titulo + " " + l.ciudad + " " + l.descripcion).includes(normalizeText(q));
     const okC = ciudad === "Todas" || l.ciudad === ciudad;
     const okT = tipo === "todos" || l.tipo === tipo;
-    return okQ && okC && okT;
+    const okA = !availMap || availMap[l.id]?.available !== false;
+    return okQ && okC && okT && okA;
   });
   const heroListing = todas.find((l) => l.imagen) ?? todas[0] ?? null;
   const favs = user?.favorites ?? [];
@@ -200,8 +242,8 @@ export default function Site({ defaultCheckIn, defaultCheckOut }: { defaultCheck
 
   const faqs = [
     {
-      q: "¿Cómo evita BioHostel el overbooking?",
-      a: "Antes de confirmar cruzamos tus fechas con los calendarios de Booking, Airbnb y los canales iCal conectados. Si hay conflicto te proponemos otras fechas u otro alojamiento; si está libre, reservamos y bloqueamos el resto de canales.",
+      q: "¿Cómo se evitan las fechas duplicadas?",
+      a: "Antes de confirmar cruzamos tus fechas con las reservas de Biohostels.com y los calendarios iCal que el anfitrión importó desde Booking, Airbnb u otras plataformas. Si hay conflicto te proponemos otras fechas u otro alojamiento. La sincronización con esas plataformas no es automática en tiempo real: depende de que el anfitrión mantenga sus calendarios actualizados.",
     },
     {
       q: "¿Puedo reservar sin crear una cuenta?",
@@ -214,7 +256,7 @@ export default function Site({ defaultCheckIn, defaultCheckOut }: { defaultCheck
     ...(settings.modules.plans
       ? [{
           q: "¿Cómo funcionan los planes para anfitriones?",
-          a: "Puedes empezar con el plan gratuito. Cuando necesitas más fotos, más alojamientos o una comisión menor, solicitas un plan desde el panel y el equipo lo activa tras el pago.",
+          a: "Puedes empezar con el plan gratuito. Cuando necesitas más fotos, más alojamientos o una comisión menor, solicitas un plan desde el panel y el equipo lo activa cuando confirma el pago.",
         }]
       : []),
     {
@@ -232,16 +274,45 @@ export default function Site({ defaultCheckIn, defaultCheckOut }: { defaultCheck
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function buscar() {
-    const resultados = filtrados.length;
+  async function buscar() {
     scrollTo("explorar");
-    notify(`${resultados} alojamiento${resultados === 1 ? "" : "s"} con tus filtros.`);
+    if (!checkIn || !checkOut || checkOut <= checkIn) {
+      notify("Elige una entrada y una salida válidas para ver disponibilidad.");
+      return;
+    }
+    setAvailLoading(true);
+    try {
+      const res = await fetch(`/api/availability/search?checkIn=${encodeURIComponent(checkIn)}&checkOut=${encodeURIComponent(checkOut)}&guests=1`);
+      const d = await res.json();
+      if (!res.ok) {
+        notify(d.error ?? "No pudimos verificar la disponibilidad.");
+        return;
+      }
+      const map: Record<string, AvailabilityResult> = {};
+      for (const r of (d.results ?? []) as AvailabilityResult[]) map[r.listingId] = r;
+      setAvailability(map);
+      setAvailDates({ checkIn, checkOut });
+      const libres = Object.values(map).filter((r) => r.available).length;
+      notify(`${libres} alojamiento${libres === 1 ? "" : "s"} disponible${libres === 1 ? "" : "s"} para tus fechas.`);
+    } catch {
+      notify("No pudimos verificar la disponibilidad. Intenta de nuevo.");
+    } finally {
+      setAvailLoading(false);
+    }
+  }
+
+  function quitarFechas() {
+    setAvailability(null);
+    setAvailDates(null);
+    notify("Mostrando todo el catálogo.");
   }
 
   function limpiarFiltros() {
     setQ("");
     setCiudad("Todas");
     setTipo("todos");
+    setAvailability(null);
+    setAvailDates(null);
     notify("Filtros limpiados.");
   }
 
@@ -250,10 +321,10 @@ export default function Site({ defaultCheckIn, defaultCheckOut }: { defaultCheck
     return false;
   }
 
-  async function doAuth(mode: "login" | "register", name: string, email: string, password: string, setErr: (m: string) => void, setLoading: (b: boolean) => void) {
+  async function doAuth(mode: "login" | "register", name: string, email: string, password: string, setErr: (m: string) => void, setLoading: (b: boolean) => void, consent: boolean) {
     setErr(""); setLoading(true);
     try {
-      const res = await fetch(`/api/auth/${mode}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, email, password }) });
+      const res = await fetch(`/api/auth/${mode}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, email, password, consent }) });
       const d = await res.json();
       if (!res.ok) { setErr(d.error ?? "No se pudo entrar."); return; }
       setUser(d.user);
@@ -293,7 +364,10 @@ export default function Site({ defaultCheckIn, defaultCheckOut }: { defaultCheck
     if (needLogin()) return;
     const res = await fetch("/api/reservations");
     const d = await res.json();
-    setBookings(d.mine ?? []);
+    setBookings(((d.mine ?? []) as Booking[]).map((b) => ({
+      ...b,
+      holdExpired: b.status === "pendiente_pago" && !!b.holdUntil && new Date(b.holdUntil).getTime() <= Date.now(),
+    })));
     setBookingsOpen(true);
   }
 
@@ -387,7 +461,7 @@ export default function Site({ defaultCheckIn, defaultCheckOut }: { defaultCheck
                 <a className="ld-btn ld-btn--ghost" href="/panel">Publicar mi alojamiento</a>
               </div>
               <div className="ld-proof">
-                <div className="ld-proof-item"><span className="ico"><Icon name="refresh" size={16} /></span><span>Verificación en Booking + Airbnb</span></div>
+                <div className="ld-proof-item"><span className="ico"><Icon name="refresh" size={16} /></span><span>Calendarios iCal de Booking + Airbnb</span></div>
                 <div className="ld-proof-item"><span className="ico"><Icon name="bed" size={16} /></span><span>Reservas por noche y por mes</span></div>
                 <div className="ld-proof-item"><span className="ico"><Icon name="tree" size={16} /></span><span>1 reserva = 1 árbol</span></div>
               </div>
@@ -414,21 +488,21 @@ export default function Site({ defaultCheckIn, defaultCheckOut }: { defaultCheck
               <span>Salida</span>
               <input id="ld-check-out" type="date" value={checkOut} min={checkIn} onChange={(e) => setCheckOut(e.target.value)} />
             </label>
-            <button className="ld-btn ld-btn--dark" type="submit"><Icon name="search" size={16} /> Buscar</button>
+            <button className="ld-btn ld-btn--dark" type="submit" disabled={availLoading} aria-busy={availLoading}><Icon name="search" size={16} /> {availLoading ? "Verificando…" : "Buscar"}</button>
           </form>
         </div>
       </section>
 
-      <section className="ld-strip" aria-label="Canales sincronizados">
+      <section className="ld-strip" aria-label="Canales compatibles">
         <div className="page ld-strip-in">
           <div className="ld-channels">
-            <span>SINCRONIZADO CON</span>
-            <span className="ld-channel">Booking.com</span>
-            <span className="ld-channel">Airbnb</span>
+            <span>CALENDARIOS COMPATIBLES</span>
+            <span className="ld-channel">Booking.com (iCal)</span>
+            <span className="ld-channel">Airbnb (iCal)</span>
             <span className="ld-channel">iCal</span>
             <span className="ld-channel">Reserva directa</span>
           </div>
-          <span className="ld-strip-note"><Icon name="check" size={14} /> Menos overbooking, más ingresos</span>
+          <span className="ld-strip-note"><Icon name="check" size={14} /> Menos fechas duplicadas, más control</span>
         </div>
       </section>
 
@@ -437,11 +511,15 @@ export default function Site({ defaultCheckIn, defaultCheckOut }: { defaultCheck
           <div>
             <p className="ld-eyebrow"><span className="dot" />Catálogo</p>
             <h2>Encuentra tu próximo refugio</h2>
-            <p className="ld-sub">Reservas por noche y subarriendos mensuales verificados en toda Colombia. Filtra, guarda favoritos y sigue a tus anfitriones.</p>
+            <p className="ld-sub">Reservas por noche y subarriendos mensuales en toda Colombia. Filtra, guarda favoritos y sigue a tus anfitriones.</p>
           </div>
           <div className="ld-count">
             <strong>{filtrados.length}</strong>
-            <span>alojamiento{filtrados.length === 1 ? "" : "s"} activo{filtrados.length === 1 ? "" : "s"}</span>
+            <span>
+              {availActive
+                ? `disponible${filtrados.length === 1 ? "" : "s"} · ${availDates!.checkIn} → ${availDates!.checkOut}`
+                : `alojamiento${filtrados.length === 1 ? "" : "s"} activo${filtrados.length === 1 ? "" : "s"}`}
+            </span>
           </div>
         </div>
 
@@ -453,6 +531,12 @@ export default function Site({ defaultCheckIn, defaultCheckOut }: { defaultCheck
               <button type="button" className={`ld-tab ${tipo === "subarriendo" ? "on" : ""}`} aria-pressed={tipo === "subarriendo"} onClick={() => setTipo("subarriendo")}><Icon name="home" size={14} /> Subarriendos mensuales</button>
             </div>
             <span className="ld-rate"><Icon name="globe" size={14} /> Precios en {currencyCode} · <TasaDot live={ratesLive} /> {ratesLive ? `tasa del día ${shortRateDate(ratesDate)}` : "tasa de referencia"}</span>
+            {availActive && (
+              <span className="ld-rate">
+                <Icon name="calendar" size={14} /> {availDates!.checkIn} → {availDates!.checkOut}
+                <button type="button" className="ld-link" onClick={quitarFechas}>Quitar fechas</button>
+              </span>
+            )}
           </div>
 
           {filtrados.length > 0 ? (
@@ -478,6 +562,9 @@ export default function Site({ defaultCheckIn, defaultCheckOut }: { defaultCheck
                         {seguidos.includes(l.anfitrion.nombre) ? <><Icon name="check" size={12} /> Siguiendo</> : "+ Seguir"}
                       </button>
                     </div>
+                    {availMap?.[l.id]?.available && (
+                      <span className="ld-avail"><Icon name="check" size={12} /> Disponible para tus fechas</span>
+                    )}
                     {l.amenidades.length > 0 && (
                       <div className="ld-chips">
                         {l.amenidades.slice(0, 3).map((a) => <span key={a} className="ld-chip"><Icon name="check" size={11} /> {a}</span>)}
@@ -489,7 +576,7 @@ export default function Site({ defaultCheckIn, defaultCheckOut }: { defaultCheck
                           {l.tipo === "subarriendo" && l.precioMes ? <>{fmt(l.precioMes)} <small>/mes</small></> : <>{fmt(l.precioNoche)} <small>/noche</small></>}
                         </span>
                         {l.tipo === "reserva" && l.precioMes && <span className="ld-price-month">{fmt(l.precioMes)}/mes</span>}
-                        <span className="ld-ai"><Icon name="bot" size={12} /> IA verificada</span>
+                        <span className="ld-ai"><Icon name="check" size={12} /> Fechas verificadas</span>
                       </div>
                       <button type="button" className="ld-btn ld-btn--dark ld-btn--sm" onClick={(e) => { e.stopPropagation(); openListing(l); }}>
                         Ver y reservar <Icon name="arrow" size={14} />
@@ -501,10 +588,12 @@ export default function Site({ defaultCheckIn, defaultCheckOut }: { defaultCheck
             </div>
           ) : (
             <div className="ld-empty">
-              <span className="ld-empty-ico"><Icon name="search" size={22} /></span>
-              <h3>No encontramos alojamientos con esos filtros</h3>
-              <p>Prueba con otra ciudad, otras fechas o limpia los filtros para ver todo el catálogo.</p>
-              <button type="button" className="ld-btn ld-btn--dark" onClick={limpiarFiltros}>Limpiar filtros</button>
+              <span className="ld-empty-ico"><Icon name={availActive ? "calendar" : "search"} size={22} /></span>
+              <h3>{availActive ? "No hay alojamientos disponibles para esas fechas" : "No encontramos alojamientos con esos filtros"}</h3>
+              <p>{availActive ? "Prueba con otras fechas o revisa el catálogo completo." : "Prueba con otra ciudad, otras fechas o limpia los filtros para ver todo el catálogo."}</p>
+              <button type="button" className="ld-btn ld-btn--dark" onClick={availActive ? quitarFechas : limpiarFiltros}>
+                {availActive ? "Ver todo el catálogo" : "Limpiar filtros"}
+              </button>
             </div>
           )}
         </div>
@@ -513,24 +602,24 @@ export default function Site({ defaultCheckIn, defaultCheckOut }: { defaultCheck
       <section className="ld-dark" id="como-funciona">
         <div className="page">
           <p className="ld-eyebrow"><span className="dot" />Cómo funciona</p>
-          <h2>Una reserva. Tres canales. Cero overbooking.</h2>
-          <p className="ld-sub">La IA revisa la disponibilidad antes de cobrar y sincroniza los calendarios cuando confirmas.</p>
+          <h2>Una reserva. Calendarios conectados. Menos fechas duplicadas.</h2>
+          <p className="ld-sub">Antes de confirmar revisamos las reservas de Biohostels.com y los calendarios iCal importados. Cuando confirmas, generamos un feed para devolver el bloqueo a las otras plataformas.</p>
           <div className="ld-steps">
             <div className="ld-step">
               <span className="ld-step-num">01</span>
               <h3>Explora y elige</h3>
-              <p>Reservas por noche o subarriendos mensuales con fotos, reglas de la casa y disponibilidad real.</p>
+              <p>Reservas por noche o subarriendos mensuales con fotos, reglas de la casa y calendarios actualizados.</p>
             </div>
             <div className="ld-step">
               <span className="ld-step-num">02</span>
               <span className="ld-step-ico"><Icon name="bot" size={20} /></span>
-              <h3>La IA verifica</h3>
-              <p>Cruzamos tus fechas con Booking, Airbnb y los canales iCal conectados antes de confirmar.</p>
+              <h3>Verificamos las fechas</h3>
+              <p>Cruzamos tus fechas con las reservas de Biohostels.com y los calendarios iCal importados antes de confirmar.</p>
             </div>
             <div className="ld-step">
               <span className="ld-step-num">03</span>
-              <h3>Confirma y sincroniza</h3>
-              <p>Una sola reserva bloquea el calendario en todas las plataformas para que nadie más la tome.</p>
+              <h3>Confirma y exporta el bloqueo</h3>
+              <p>La reserva queda bloqueada en Biohostels.com y generamos un feed iCal para que lo cargues en Booking o Airbnb.</p>
             </div>
           </div>
           <button type="button" className="ld-btn ld-btn--lime" onClick={() => scrollTo("explorar")}>
@@ -628,7 +717,7 @@ export default function Site({ defaultCheckIn, defaultCheckOut }: { defaultCheck
           <div className="ld-section-head">
             <div>
               <p className="ld-eyebrow"><span className="dot" />Proveedores</p>
-              <h2>{settings.modules.publicAds ? "Marcas que acompañan cada estancia." : "Comunidad BioHostel."}</h2>
+              <h2>{settings.modules.publicAds ? "Marcas que acompañan cada estancia." : "Comunidad Biohostels."}</h2>
               <p className="ld-sub">{settings.modules.publicAds ? "Tecnología, descanso, higiene y energía para anfitriones que quieren mejorar la experiencia." : "Aliados, fundaciones y paquetes que hacen crecer tu alojamiento."}</p>
             </div>
           </div>
@@ -731,7 +820,7 @@ export default function Site({ defaultCheckIn, defaultCheckOut }: { defaultCheck
             <div className="ld-cta-copy">
               <p className="ld-eyebrow"><span className="dot" />Para anfitriones</p>
               <h2>Tu espacio puede generar más, con menos riesgo.</h2>
-              <p>Publica gratis, conecta tus calendarios y deja que la IA evite el overbooking.</p>
+              <p>Publica gratis, importa tus calendarios y reduce el riesgo de fechas duplicadas.</p>
             </div>
             <div className="ld-cta-actions">
               <a className="ld-btn ld-btn--lime" href="/panel">Publicar mi alojamiento <Icon name="arrow" size={16} /></a>
@@ -747,7 +836,15 @@ export default function Site({ defaultCheckIn, defaultCheckOut }: { defaultCheck
         <div className="page">
           <div className="ld-footer-grid">
             <div>
-              <span className="ld-foot-brand">{brandName}</span>
+              <span className="ld-foot-brand">
+                {settings.brand.logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={settings.brand.logoUrl} alt="" width={28} height={28} />
+                ) : (
+                  <BiohostelsMark size={28} invert />
+                )}
+                {brandName}
+              </span>
               <p className="ld-foot-tag">{settings.brand.tagline}</p>
               <div className="ld-foot-contact">
                 {settings.footer.contactEmail && (
@@ -757,6 +854,7 @@ export default function Site({ defaultCheckIn, defaultCheckOut }: { defaultCheck
                   <a key={item.label} href={item.url} target="_blank" rel="noreferrer">{item.label}</a>
                 ))}
               </div>
+              <div className="ld-foot-seal"><BiohostelsSeal /></div>
             </div>
             <div>
               <h4>Explorar</h4>
@@ -794,10 +892,25 @@ export default function Site({ defaultCheckIn, defaultCheckOut }: { defaultCheck
               </div>
               {bookings.length === 0 ? <p className="muted">Aún no tienes reservas. Explora y reserva tu primera noche.</p> : (
                 <table className="tbl"><thead><tr><th>CÓDIGO</th><th>ALOJAMIENTO</th><th>FECHAS</th><th>TOTAL</th><th>ESTADO</th><th></th></tr></thead>
-                  <tbody>{bookings.map((b) => (
-                    <tr key={b.id}><td><strong>{b.code}</strong></td><td>{b.listingTitle}</td><td>{b.checkIn} → {b.checkOut}</td><td>{fmt(b.total)}</td><td>{b.status === "confirmada" ? <><TasaDot live /> Confirmada</> : "Cancelada"}</td>
-                      <td>{b.status === "confirmada" && <button className="btn btn-ghost" onClick={() => cancelBooking(b.id)}>Cancelar</button>}</td></tr>
-                  ))}</tbody>
+                  <tbody>{bookings.map((b) => {
+                    const st = bookingStatus(b);
+                    const active = b.status === "confirmada" || b.status === "pendiente_pago";
+                    return (
+                      <tr key={b.id}>
+                        <td><a href={`/reserva/${encodeURIComponent(b.code)}`}><strong>{b.code}</strong></a></td>
+                        <td>{b.listingTitle}</td>
+                        <td>{b.checkIn} → {b.checkOut}</td>
+                        <td>{fmt(b.total)}</td>
+                        <td>{st.tone === "ok" ? <><TasaDot live /> {st.label}</> : st.label}</td>
+                        <td>
+                          <div className="row" style={{ gap: 6, justifyContent: "flex-end" }}>
+                            {b.status === "pendiente_pago" && b.payment?.checkoutUrl && <a className="btn btn-ghost" href={b.payment.checkoutUrl}>Pagar</a>}
+                            {active && <button className="btn btn-ghost" onClick={() => cancelBooking(b.id)}>Cancelar</button>}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}</tbody>
                 </table>
               )}
             </div>

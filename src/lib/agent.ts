@@ -158,12 +158,12 @@ export async function agentTurn(messages: AgentMsg[]): Promise<{ reply: string; 
   if (!hasFilters) {
     reply = `¿Qué tipo de hospedaje buscas? Puedo filtrar por ciudad (Nocaima, Bogotá, Medellín, Cartagena, Santa Marta, Salento), presupuesto, fechas y número de personas. Mientras tanto, esto es lo mejor valorado desde ${moneyCOP(min)} la noche:`;
   } else if (!dates) {
-    reply = `Encontré ${pool.length} opción(es)${city ? ` en ${city}` : ""} desde ${moneyCOP(min)} la noche. Toca “Ver” para detalles o dime tus fechas (AAAA-MM-DD a AAAA-MM-DD) y verifico disponibilidad real en Booking, Airbnb y los canales del anfitrión.`;
+    reply = `Encontré ${pool.length} opción(es)${city ? ` en ${city}` : ""} desde ${moneyCOP(min)} la noche. Toca “Ver” para detalles o dime tus fechas (AAAA-MM-DD a AAAA-MM-DD) y reviso las reservas de Biohostels y los calendarios iCal del anfitrión.`;
   } else {
     const ok = suggestions.filter((s) => s.available).length;
     reply =
       ok > 0
-        ? `Revisé ${dates.checkIn} al ${dates.checkOut}: ${ok} de ${suggestions.length} disponible(s). Abre la que te guste y confirma: la IA la marca como reservada en todos los canales.`
+        ? `Revisé ${dates.checkIn} al ${dates.checkOut}: ${ok} de ${suggestions.length} disponible(s). Abre la que te guste y confirma: la reserva queda bloqueada en Biohostels y el anfitrión puede exportar el bloqueo por iCal.`
         : `Para ${dates.checkIn} al ${dates.checkOut} están ocupadas. Te sugiero mover las fechas unos días o mirar otra ciudad. ¿Pruebo con otras fechas?`;
   }
   if (hasFilters && ragHits.length && ragHits[0].score > 0.05 && ragHits[0].snippet.length > 40) {

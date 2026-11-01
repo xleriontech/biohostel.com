@@ -14,6 +14,9 @@ export type StoredUser = {
   favorites: string[];
   follows: string[];
   createdAt: string;
+  consentVersion?: string;
+  consentAt?: string;
+  consentIp?: string;
 };
 
 export type StoredSession = { token: string; userId: string; expiresAt: string };
@@ -64,7 +67,27 @@ export type StoredReservation = {
   total: number;
   status: string;
   aiReport: string;
+  guestEmail?: string;
+  guestPhone?: string;
+  source?: string;
+  requestId?: string;
+  consentVersion?: string;
+  consentAt?: string;
+  consentIp?: string;
+  consentUserAgent?: string;
   createdAt: string;
+  // Pago: Wompi (en línea) o coordinación manual con el anfitrión
+  holdUntil?: string;
+  payment?: {
+    provider: "wompi" | "manual";
+    status: "pendiente" | "aprobado" | "rechazado" | "expirado" | "no_aplica";
+    reference?: string;
+    checkoutUrl?: string;
+    transactionId?: string;
+    method?: string;
+    amountInCents?: number;
+    updatedAt?: string;
+  };
 };
 
 export type StoredLead = { id: string; tipo: string; nombre: string; email: string; mensaje: string; detalle: string; estado: string; notas: string; createdAt: string };
@@ -81,7 +104,7 @@ export type AIConfig = {
   updatedAt: string;
 };
 
-// Canal externo de un alojamiento (Airbnb/Booking/Web): la IA lo consulta y lo bloquea
+// Canal externo de un alojamiento (Airbnb/Booking/Web): su iCal se importa y se exporta el bloqueo
 export type ListingChannel = {
   id: string;
   listingId: string;
@@ -142,6 +165,8 @@ function normalizeListings(rows: StoredListing[]): StoredListing[] {
       direccion: row.direccion || demo?.direccion,
       lat: typeof row.lat === "number" ? row.lat : demo?.lat,
       lng: typeof row.lng === "number" ? row.lng : demo?.lng,
+      // Cada micrositio se pinta con su propio tema; si el anfitrión no lo guardó, vale el de su ficha.
+      theme: row.theme ?? demo?.theme,
     };
   });
 }

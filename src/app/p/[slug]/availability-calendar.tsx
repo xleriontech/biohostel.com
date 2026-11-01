@@ -2,17 +2,23 @@
 
 import React from "react";
 import { toISODate } from "@/lib/dates";
+import type { ConflictSource } from "@/lib/booking-engine";
 
 interface AvailabilityCalendarProps {
   listing: {
     fechasOcupadasBooking?: string[];
     fechasOcupadasAirbnb?: string[];
   };
+  occupied?: string[];
+  sources?: ConflictSource[];
 }
 
-function AvailabilityCalendar({ listing }: AvailabilityCalendarProps) {
-  const [viewDate, setViewDate] = React.useState(new Date());
-  const ocupadas = new Set([...(listing.fechasOcupadasBooking ?? []), ...(listing.fechasOcupadasAirbnb ?? [])]);
+function AvailabilityCalendar({ listing, occupied, sources }: AvailabilityCalendarProps) {
+  const [viewDate, setViewDate] = React.useState(() => new Date());
+  const ocupadas = React.useMemo(() => {
+    if (occupied) return new Set(occupied);
+    return new Set([...(listing.fechasOcupadasBooking ?? []), ...(listing.fechasOcupadasAirbnb ?? [])]);
+  }, [occupied, listing.fechasOcupadasBooking, listing.fechasOcupadasAirbnb]);
 
   const today = new Date();
   const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -28,6 +34,8 @@ function AvailabilityCalendar({ listing }: AvailabilityCalendarProps) {
 
   const prevMonth = new Date(year, month - 1, 1);
   const nextMonth = new Date(year, month + 1, 1);
+
+  const sourceLabels = (sources ?? []).filter((s) => s.dates.length > 0).map((s) => s.platform);
 
   const cellStyle = (date: Date): React.CSSProperties => {
     const base: React.CSSProperties = {
@@ -62,19 +70,23 @@ function AvailabilityCalendar({ listing }: AvailabilityCalendarProps) {
       <h3 style={{ fontFamily: "var(--display)", fontWeight: 700, color: "var(--heading)", marginBottom: 12 }}>Disponibilidad</h3>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <button
+          type="button"
           onClick={() => setViewDate(prevMonth)}
           className="btn btn-ghost btn-small"
           style={{ padding: "6px 12px", fontSize: "12px" }}
+          aria-label="Mes anterior"
         >
           ←
         </button>
-        <span style={{ fontWeight: 700, fontSize: "14px", color: "var(--ink)" }}>
+        <span style={{ fontWeight: 700, fontSize: "14px", color: "var(--ink)" }} aria-live="polite">
           {monthNames[month]} {year}
         </span>
         <button
+          type="button"
           onClick={() => setViewDate(nextMonth)}
           className="btn btn-ghost btn-small"
           style={{ padding: "6px 12px", fontSize: "12px" }}
+          aria-label="Mes siguiente"
         >
           →
         </button>
@@ -88,7 +100,6 @@ function AvailabilityCalendar({ listing }: AvailabilityCalendarProps) {
         ))}
         {Array.from({ length: daysInMonth }).map((_, i) => {
           const date = new Date(year, month, i + 1);
-
           return (
             <div key={toISODate(date)} style={cellStyle(date)}>
               {i + 1}
@@ -96,11 +107,16 @@ function AvailabilityCalendar({ listing }: AvailabilityCalendarProps) {
           );
         })}
       </div>
-      <div style={{ display: "flex", gap: 16, justifyContent: "center", marginTop: 12, fontSize: 12, color: "var(--muted)" }}>
+      <div style={{ display: "flex", gap: 16, justifyContent: "center", marginTop: 12, fontSize: 12, color: "var(--muted)", flexWrap: "wrap" }}>
         <span><span style={{ ...legendDot, background: "var(--surface)", border: "1px solid var(--line)" }} />Disponible</span>
         <span><span style={{ ...legendDot, background: "#fee2e2", border: "1px solid #fecaca" }} />Ocupado</span>
         <span><span style={{ ...legendDot, background: "var(--surface)", border: "2px solid var(--green)" }} />Hoy</span>
       </div>
+      {sourceLabels.length > 0 && (
+        <p style={{ textAlign: "center", marginTop: 10, fontSize: 12, color: "var(--muted)" }}>
+          Ocupación conocida por: {sourceLabels.join(", ")}.
+        </p>
+      )}
     </section>
   );
 }

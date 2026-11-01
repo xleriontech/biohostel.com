@@ -1,5 +1,6 @@
 import type { StoredListing } from "./store";
 import type { ListingTheme } from "./data";
+import { isValidRnt, normalizeRnt } from "./legal";
 
 const PRESETS: ListingTheme["preset"][] = ["selva", "mar", "colonial", "urbano", "minimal"];
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -57,7 +58,22 @@ export function applyListingEdit(
   if (body.tipo !== undefined) {
     if (body.tipo !== "reserva" && body.tipo !== "subarriendo") return "Tipo de alojamiento inválido.";
     listing.tipo = body.tipo;
-    if (body.tipo === "reserva") listing.precioMes = undefined;
+    if (body.tipo === "reserva") {
+      listing.precioMes = undefined;
+      listing.subleaseAuth = undefined;
+    }
+  }
+
+  if (body.rnt !== undefined) {
+    const raw = typeof body.rnt === "string" ? normalizeRnt(body.rnt) : "";
+    if (raw && !isValidRnt(raw)) return "El RNT debe contener solo dígitos (entre 4 y 20).";
+    listing.rnt = raw || undefined;
+  }
+
+  if (typeof body.subleaseDeclared === "boolean" && listing.tipo === "subarriendo") {
+    listing.subleaseAuth = body.subleaseDeclared
+      ? { ...(listing.subleaseAuth ?? { confirmed: true }), confirmed: true }
+      : { confirmed: false };
   }
 
   if (body.categoria !== undefined || body.tipo !== undefined) {
@@ -138,11 +154,11 @@ export function applyListingEdit(
 
   if (body.theme && typeof body.theme === "object") {
     const theme = body.theme as Record<string, unknown>;
-    const primary = typeof theme.primary === "string" && HEX.test(theme.primary) ? theme.primary : listing.theme?.primary ?? "#1d4a2c";
-    const accent = typeof theme.accent === "string" && HEX.test(theme.accent) ? theme.accent : listing.theme?.accent ?? "#bef264";
+    const primary = typeof theme.primary === "string" && HEX.test(theme.primary) ? theme.primary : listing.theme?.primary ?? "#3f3f46";
+    const accent = typeof theme.accent === "string" && HEX.test(theme.accent) ? theme.accent : listing.theme?.accent ?? "#e4e4e7";
     const preset = PRESETS.includes(theme.preset as ListingTheme["preset"])
       ? (theme.preset as ListingTheme["preset"])
-      : listing.theme?.preset ?? "selva";
+      : listing.theme?.preset ?? "minimal";
     listing.theme = {
       primary,
       accent,

@@ -6,11 +6,13 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 // - En Cloudflare Workers: D1 (tabla kv_store) + R2 (uploads)
 // - En local (next dev): archivos JSON en .data/ + public/uploads/
 
+type D1RunResult = { meta?: { changes?: number } };
+
 type D1Binding = {
   prepare: (q: string) => {
     bind: (...args: unknown[]) => {
       first: <T>(col?: string) => Promise<T | null>;
-      run: () => Promise<unknown>;
+      run: () => Promise<D1RunResult>;
     };
   };
 };
@@ -106,6 +108,64 @@ export async function writeTable<T>(name: string, rows: T[]): Promise<void> {
   return writeLocal(name, rows);
 }
 
+const localLocks = new Map<string, Promise<unknown>>();
+
+async function updateLocal<T, R>(
+  name: string,
+  seed: () => T[],
+  update: (rows: T[]) => { rows: T[]; result: R } | null,
+): Promise<R | null> {
+  const run = async (): Promise<R | null> => {
+    const rows = await readLocal<T>(name, seed);
+    const outcome = update(rows);
+    if (!outcome) return null;
+    await writeLocal(name, outcome.rows);
+    return outcome.result;
+  };
+  const tail = localLocks.get(name) ?? Promise.resolve();
+  const next = tail.then(run, run);
+  localLocks.set(name, next.catch(() => undefined));
+  return next;
+}
+
+// Actualización atómica read-modify-write. En D1 usa compare-and-swap sobre el
+// JSON almacenado para que dos reservas simultáneas no se pisen.
+export async function updateTable<T, R>(
+  name: string,
+  seed: () => T[],
+  update: (rows: T[]) => { rows: T[]; result: R } | null,
+): Promise<R | null> {
+  const db = getD1();
+  if (!db) return updateLocal(name, seed, update);
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      let raw = await db.prepare("SELECT v FROM kv_store WHERE k = ?").bind(name).first<string>("v");
+      if (typeof raw !== "string") {
+        await db
+          .prepare("INSERT INTO kv_store (k, v) VALUES (?, ?) ON CONFLICT(k) DO NOTHING")
+          .bind(name, JSON.stringify(seed()))
+          .run();
+        raw = await db.prepare("SELECT v FROM kv_store WHERE k = ?").bind(name).first<string>("v");
+        if (typeof raw !== "string") continue;
+      }
+      const rows = JSON.parse(raw) as T[];
+      const outcome = update(rows);
+      if (!outcome) return null;
+      const nextRaw = JSON.stringify(outcome.rows);
+      if (nextRaw === raw) return outcome.result;
+      const res = await db
+        .prepare("UPDATE kv_store SET v = ? WHERE k = ? AND v = ?")
+        .bind(nextRaw, name, raw)
+        .run();
+      if ((res.meta?.changes ?? 0) === 1) return outcome.result;
+    } catch {
+      /* reintenta el ciclo completo */
+    }
+  }
+  throw new Error("No se pudo completar la operación de forma atómica.");
+}
+
 export async function saveUpload(name: string, bytes: Uint8Array, mime: string): Promise<void> {
   const bucket = getBucket();
   if (bucket) {
@@ -139,6 +199,51 @@ export async function readUpload(name: string): Promise<{ bytes: Uint8Array; mim
   } catch {
     return null;
   }
+}
+
+// Documentos privados (autorizaciones de subarriendo). Nunca se sirven por /api/files.
+export async function savePrivateFile(name: string, bytes: Uint8Array, mime: string): Promise<void> {
+  const bucket = getBucket();
+  if (bucket) {
+    try {
+      await bucket.put(`private/${name}`, bytes, { httpMetadata: { contentType: mime } });
+      return;
+    } catch {
+      /* cae a disco local */
+    }
+  }
+  const dir = path.join(process.cwd(), ".data", "private");
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(path.join(dir, name), bytes);
+}
+
+export async function readPrivateFile(name: string): Promise<{ bytes: Uint8Array; mime: string } | null> {
+  const bucket = getBucket();
+  if (bucket) {
+    try {
+      const obj = await bucket.get(`private/${name}`);
+      if (obj) {
+        const buf = await new Response(obj.body).arrayBuffer();
+        return { bytes: new Uint8Array(buf), mime: obj.httpMetadata?.contentType ?? "application/octet-stream" };
+      }
+    } catch {
+      /* cae a disco local */
+    }
+  }
+  try {
+    const bytes = new Uint8Array(await fs.readFile(path.join(process.cwd(), ".data", "private", name)));
+    return { bytes, mime: "application/octet-stream" };
+  } catch {
+    return null;
+  }
+}
+
+export async function deletePrivateFile(name: string): Promise<void> {
+  const bucket = getBucket();
+  if (bucket) {
+    await bucket.delete(`private/${name}`).catch(() => null);
+  }
+  await fs.unlink(path.join(process.cwd(), ".data", "private", name)).catch(() => null);
 }
 
 export async function deleteUpload(name: string): Promise<void> {

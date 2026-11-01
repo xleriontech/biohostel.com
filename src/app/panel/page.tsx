@@ -14,7 +14,27 @@ import { ListingEditForm } from "@/components/listing-edit-form";
 
 type User = { id: string; name: string; email: string; plan: PlanId; role?: string; favorites: string[]; follows: string[] };
 type MyListing = Listing & { active?: boolean };
-type Reservation = { id: string; code: string; listingTitle: string; guestName: string; checkIn: string; checkOut: string; guests: number; base: number; commission: number; extrasTotal?: number; total: number; status: string; aiReport: string; createdAt: string };
+type Reservation = {
+  id: string;
+  code: string;
+  listingTitle: string;
+  guestName: string;
+  guestEmail?: string;
+  guestPhone?: string;
+  checkIn: string;
+  checkOut: string;
+  guests: number;
+  base: number;
+  commission: number;
+  extrasTotal?: number;
+  total: number;
+  status: string;
+  aiReport: string;
+  createdAt: string;
+  holdUntil?: string;
+  holdExpired?: boolean;
+  payment?: { provider: "wompi" | "manual"; status: string; checkoutUrl?: string; method?: string; reference?: string };
+};
 type Lead = { id: string; tipo: string; nombre: string; email: string; mensaje: string; detalle: string; createdAt: string };
 type Channel = { id: string; plataforma: string; cuenta: string; ultima: string };
 type ImportData = { titulo: string; descripcion: string; h1: string; imagenes: string[]; amenidades: string[]; ciudad: string; fuente: string };
@@ -47,12 +67,15 @@ export default function Panel() {
   const [fPrecio, setFPrecio] = useState("180000");
   const [fTipo, setFTipo] = useState<"reserva" | "subarriendo">("reserva");
   const [fHuespedes, setFHuespedes] = useState("2");
+  const [fRnt, setFRnt] = useState("");
+  const [fSubleaseDeclared, setFSubleaseDeclared] = useState(false);
+  const [fSubleaseFile, setFSubleaseFile] = useState<File | null>(null);
   const [selImgs, setSelImgs] = useState<string[]>([]);
   const [fTheme, setFTheme] = useState<{ primary: string; accent: string; preset: "selva" | "mar" | "colonial" | "urbano" | "minimal"; font: "sans"; rationale: string } | null>(null);
   // Canales
   const [chPlat, setChPlat] = useState("Booking");
   const [chCuenta, setChCuenta] = useState("");
-  // Canales por alojamiento (la IA los consulta y bloquea)
+  // Canales por alojamiento (iCal importado manualmente)
   const [chOpen, setChOpen] = useState("");
   const [chList, setChList] = useState<{ id: string; platform: string; url: string; icalUrl: string; occupied: string[]; lastSync: string }[]>([]);
   const [chPlatform, setChPlatform] = useState("Airbnb");
@@ -69,7 +92,7 @@ export default function Panel() {
     const d = await res.json();
     if (!res.ok) { notify(d.error ?? "Error."); return; }
     setChUrl(""); setChIcal("");
-    notify(`Canal ${chPlatform} agregado. La IA ya lo consulta.`);
+    notify(`Canal ${chPlatform} agregado. Sincroniza el iCal para traer la ocupación.`);
     loadChannels(listingId);
   }
 
@@ -84,10 +107,10 @@ export default function Panel() {
   const [authOpen, setAuthOpen] = useState(true);
   const { code: currencyCode, fmt, live: ratesLive, ratesDate } = useCurrency();
 
-  async function doAuth(mode: "login" | "register", name: string, email: string, password: string, setErr: (m: string) => void, setLoading: (b: boolean) => void) {
+  async function doAuth(mode: "login" | "register", name: string, email: string, password: string, setErr: (m: string) => void, setLoading: (b: boolean) => void, consent: boolean) {
     setErr(""); setLoading(true);
     try {
-      const res = await fetch(`/api/auth/${mode}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, email, password }) });
+      const res = await fetch(`/api/auth/${mode}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, email, password, consent }) });
       const d = await res.json();
       if (!res.ok) { setErr(d.error ?? "No se pudo entrar."); return; }
       setUser(d.user);
@@ -118,7 +141,10 @@ export default function Panel() {
       fetch("/api/leads").then((r) => r.json()).catch(() => ({})),
       fetch("/api/channels").then((r) => r.json()).catch(() => ({})),
     ]);
-    setReceived(res.received ?? []);
+    setReceived((res.received ?? []).map((r: Reservation) => ({
+      ...r,
+      holdExpired: r.status === "pendiente_pago" && !!r.holdUntil && new Date(r.holdUntil).getTime() <= Date.now(),
+    })));
     setAllListings(lst.listings ?? []);
     setMine(own.listings ?? []);
     setLeads(lds.leads ?? []);
@@ -129,10 +155,28 @@ export default function Panel() {
 
   const totales = useMemo(() => {
     const act = received.filter((r) => r.status === "confirmada");
+    const pending = received.filter((r) => r.status === "pendiente_pago");
     const ingreso = act.reduce((s, r) => s + r.total, 0);
     const comisiones = act.reduce((s, r) => s + r.commission, 0);
-    return { ingreso, comisiones, neto: ingreso - comisiones, count: received.length };
+    return { ingreso, comisiones, neto: ingreso - comisiones, count: act.length, pending: pending.length };
   }, [received]);
+
+  function resStatusLabel(r: Reservation): string {
+    if (r.status === "confirmada") return "Confirmada";
+    if (r.status === "pendiente_pago") {
+      return r.holdExpired ? "Retención vencida" : "Pago pendiente";
+    }
+    return "Cancelada";
+  }
+
+  function pagoLabel(r: Reservation): string {
+    const status = r.payment?.status;
+    if (status === "aprobado") return r.payment?.method === "manual" ? "Aprobado · manual" : "Aprobado";
+    if (status === "pendiente") return "Pendiente";
+    if (status === "rechazado") return "Rechazado";
+    if (status === "expirado") return "Vencido";
+    return "Manual";
+  }
 
   const plan = user?.plan ?? "gratuito";
   const limite = plan === "gratuito" ? { fotos: 5, desc: 300, alojamientos: 1 } : plan === "corporativo" ? { fotos: "∞", desc: "∞", alojamientos: 20 } : { fotos: "∞+video", desc: "∞+SEO", alojamientos: "∞" };
@@ -184,11 +228,11 @@ export default function Panel() {
         });
       } else {
         setFTheme({
-          primary: "#1d4a2c",
-          accent: "#bef264",
-          preset: "selva",
+          primary: "#3f3f46",
+          accent: "#e4e4e7",
+          preset: "minimal",
           font: "sans",
-          rationale: "No detecté colores en la web; usé el preset Selva por defecto. Ajusta abajo.",
+          rationale: "No detecté colores en la web; dejé un tema neutro. Ajusta abajo.",
         });
       }
       notify(`Extraído: ${(data.imagenes as string[]).length} imágenes, amenidades y diseño.`);
@@ -197,15 +241,57 @@ export default function Panel() {
   }
 
   async function publicar() {
+    if (!/^\d{4,20}$/.test(fRnt.trim())) {
+      notify("Escribe el RNT (solo dígitos) para publicar. Es obligatorio por el Decreto 1836 de 2021.");
+      return;
+    }
+    if (fTipo === "subarriendo" && !fSubleaseDeclared) {
+      notify("Declara que cuentas con autorización escrita del propietario para subarrendar.");
+      return;
+    }
+    if (fTipo === "subarriendo" && !fSubleaseFile) {
+      notify("Adjunta el documento de autorización del propietario.");
+      return;
+    }
     const res = await fetch("/api/listings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ titulo: fTitulo, ciudad: fCiudad, descripcion: fDesc, precioNoche: Number(fPrecio), tipo: fTipo, huespedes: Number(fHuespedes), imagenes: selImgs, amenidades: imp?.amenidades ?? [], fuente: imp?.fuente ?? "", theme: fTheme }),
+      body: JSON.stringify({ titulo: fTitulo, ciudad: fCiudad, descripcion: fDesc, precioNoche: Number(fPrecio), tipo: fTipo, huespedes: Number(fHuespedes), imagenes: selImgs, amenidades: imp?.amenidades ?? [], fuente: imp?.fuente ?? "", theme: fTheme, rnt: fRnt.trim(), subleaseDeclared: fTipo === "subarriendo" ? fSubleaseDeclared : undefined }),
     });
     const d = await res.json();
     if (!res.ok) { notify(d.error ?? "No se pudo publicar."); return; }
+
+    if (fTipo === "subarriendo") {
+      const form = new FormData();
+      form.append("listingId", d.listing.id);
+      form.append("file", fSubleaseFile!);
+      const up = await fetch("/api/listings/sublease-doc", { method: "POST", body: form }).catch(() => null);
+      const upData: { error?: string } = up ? await up.json().catch(() => ({})) : {};
+      if (!up || !up.ok) {
+        notify(`Publicación creada en pausa: ${upData.error ?? "no se pudo subir la autorización"}.`);
+        setImp(null);
+        refresh();
+        return;
+      }
+      const act = await fetch("/api/listings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: d.listing.id, active: true }),
+      });
+      const actData: { error?: string } = await act.json().catch(() => ({}));
+      if (!act.ok) {
+        notify(`Publicación creada en pausa: ${actData.error ?? "falta completar el cumplimiento"}.`);
+        setImp(null);
+        refresh();
+        return;
+      }
+    }
+
     setImp(null);
     setImportStep("data");
+    setFRnt("");
+    setFSubleaseDeclared(false);
+    setFSubleaseFile(null);
     notify(`"${d.listing.titulo}" publicado. Ya está en el sitio.`);
     refresh();
   }
@@ -230,9 +316,16 @@ export default function Panel() {
     refresh();
   }
 
-  async function setResStatus(id: string, status: string) {
-    await fetch("/api/reservations", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status }) });
-    notify(status === "cancelada" ? "Reserva cancelada y calendarios liberados." : "Reserva confirmada y notificada a los canales.");
+  async function setResStatus(id: string, status: string, markPaid = false) {
+    if (status === "cancelada" && !confirm("¿Cancelar esta reserva y liberar las fechas?")) return;
+    const res = await fetch("/api/reservations", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, status, markPaid }),
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) { notify(d.error ?? "No se pudo actualizar la reserva."); return; }
+    notify(status === "cancelada" ? "Reserva cancelada y fechas liberadas." : markPaid ? "Pago registrado manualmente: reserva confirmada." : "Reserva confirmada.");
     refresh();
   }
 
@@ -241,7 +334,7 @@ export default function Panel() {
     const d = await res.json();
     if (!res.ok) { notify(d.error ?? "Error."); return; }
     setChCuenta("");
-    notify(`${d.channel.plataforma} conectado. La IA ya sincroniza ese calendario.`);
+    notify(`${d.channel.plataforma} conectado.`);
     refresh();
   }
 
@@ -280,7 +373,7 @@ export default function Panel() {
         <Brand small="PANEL" />
         <nav className="nav">
           <button className={`pill ${tab === "resumen" ? "on" : ""}`} onClick={() => setTab("resumen")}>Resumen</button>
-          <button className={`pill ${tab === "reservas" ? "on" : ""}`} onClick={() => setTab("reservas")}>Reservas + IA ({received.filter((r) => r.status === "confirmada").length})</button>
+          <button className={`pill ${tab === "reservas" ? "on" : ""}`} onClick={() => setTab("reservas")}>Reservas ({received.filter((r) => r.status === "confirmada" || r.status === "pendiente_pago").length})</button>
           <button className={`pill ${tab === "alojamientos" ? "on" : ""}`} onClick={() => setTab("alojamientos")}>Alojamientos ({mine.length})</button>
           <button className={`pill ${tab === "leads" ? "on" : ""}`} onClick={() => setTab("leads")}>Solicitudes ({leads.length})</button>
         </nav>
@@ -323,13 +416,13 @@ export default function Panel() {
         {tab === "resumen" && (
           <>
             <div className="kpis">
-              <div className="kpi"><span className="muted">Reservas recibidas</span><strong>{totales.count}</strong><span className="muted">verificadas por IA</span></div>
+              <div className="kpi"><span className="muted">Reservas recibidas</span><strong>{totales.count}</strong><span className="muted">confirmadas{totales.pending > 0 ? ` · ${totales.pending} por pagar` : ""}</span></div>
               <div className="kpi"><span className="muted">Ingreso bruto</span><strong>{fmt(totales.ingreso)}</strong><span className="muted">incluye comisión</span></div>
               <div className="kpi"><span className="muted">Comisión plataforma</span><strong>{fmt(totales.comisiones)}</strong><span className="muted">según tu plan</span></div>
               <div className="kpi"><span className="muted">Neto para ti</span><strong>{fmt(totales.neto)}</strong><span className="muted">a tu cuenta</span></div>
             </div>
             <h3 style={{ marginTop: 22 }}><Icon name="bot" size={18} /> Verificación de reservas — conecta tus cuentas</h3>
-            <p className="muted">La IA verifica cada reserva contra estos calendarios y bloquea las fechas automáticamente.</p>
+            <p className="muted">El motor cruza cada reserva con estos calendarios y bloquea las fechas dentro de Biohostels.</p>
             <table className="tbl"><thead><tr><th>PLATAFORMA</th><th>CUENTA</th><th>SYNC</th><th></th></tr></thead>
               <tbody>
                 {channels.length === 0 && <tr><td colSpan={4} className="muted">Sin canales. Conecta tu Booking o Airbnb abajo.</td></tr>}
@@ -350,11 +443,32 @@ export default function Panel() {
           <>
             <h3>Reservas recibidas en tus alojamientos</h3>
             {received.length === 0 ? <p className="muted">Aún no recibes reservas. Publica y comparte tu enlace.</p> : (
-              <table className="tbl"><thead><tr><th>CÓDIGO</th><th>HUÉSPED</th><th>ALOJAMIENTO</th><th>FECHAS</th><th>TOTAL</th><th>ESTADO</th><th></th></tr></thead>
+              <table className="tbl"><thead><tr><th>CÓDIGO</th><th>HUÉSPED</th><th>ALOJAMIENTO</th><th>FECHAS</th><th>TOTAL</th><th>ESTADO</th><th>PAGO</th><th></th></tr></thead>
                 <tbody>{received.map((r) => (
-                  <tr key={r.id}><td><strong>{r.code}</strong></td><td>{r.guestName}</td><td>{r.listingTitle}</td><td>{r.checkIn} → {r.checkOut}</td><td>{fmt(r.total)} <small className="muted">(com. {fmt(r.commission)}{r.extrasTotal ? ` · extras ${fmt(r.extrasTotal)}` : ""})</small></td>
-                    <td>{r.status === "confirmada" ? "Confirmada" : "Cancelada"}</td>
-                    <td>{r.status === "confirmada" ? <button className="btn btn-ghost" onClick={() => setResStatus(r.id, "cancelada")}>Cancelar</button> : <button className="btn btn-ghost" onClick={() => setResStatus(r.id, "confirmada")}>Reactivar</button>}</td></tr>
+                  <tr key={r.id}>
+                    <td><strong>{r.code}</strong><br /><a href={`/reserva/${r.code}`} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: "inherit", textDecoration: "underline" }}>Ver estado</a></td>
+                    <td>{r.guestName}{r.guestEmail && <><br /><small className="muted">{r.guestEmail}</small></>}{r.guestPhone && <><br /><small className="muted">{r.guestPhone}</small></>}</td>
+                    <td>{r.listingTitle}</td>
+                    <td>{r.checkIn} → {r.checkOut}</td>
+                    <td>{fmt(r.total)} <small className="muted">(com. {fmt(r.commission)}{r.extrasTotal ? ` · extras ${fmt(r.extrasTotal)}` : ""})</small></td>
+                    <td>{resStatusLabel(r)}</td>
+                    <td>{pagoLabel(r)}</td>
+                    <td>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {r.status === "pendiente_pago" && r.payment?.checkoutUrl && (
+                          <a className="btn btn-ghost" href={r.payment.checkoutUrl} target="_blank" rel="noreferrer">Enlace de pago</a>
+                        )}
+                        {r.status === "pendiente_pago" && (
+                          <button className="btn btn-ghost" onClick={() => setResStatus(r.id, "confirmada", true)}>Confirmar pago</button>
+                        )}
+                        {r.status !== "cancelada" ? (
+                          <button className="btn btn-ghost" onClick={() => setResStatus(r.id, "cancelada")}>Cancelar</button>
+                        ) : (
+                          <button className="btn btn-ghost" onClick={() => setResStatus(r.id, "confirmada")}>Reactivar</button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
                 ))}</tbody>
               </table>
             )}
@@ -382,6 +496,25 @@ export default function Panel() {
                   <div className="field"><label>Tipo</label><select value={fTipo} onChange={(e) => setFTipo(e.target.value as "reserva" | "subarriendo")}><option value="reserva">Reserva por noche</option><option value="subarriendo">Subarriendo mensual</option></select></div>
                   <div className="field"><label>Huéspedes</label><input type="number" value={fHuespedes} onChange={(e) => setFHuespedes(e.target.value)} /></div>
                 </div>
+                <div className="field">
+                  <label>RNT · Registro Nacional de Turismo</label>
+                  <input value={fRnt} inputMode="numeric" maxLength={20} onChange={(e) => setFRnt(e.target.value)} placeholder="Solo dígitos" />
+                  <p className="muted" style={{ fontSize: 12, margin: "4px 0 0" }}>Obligatorio para publicar (Decreto 1836 de 2021).</p>
+                </div>
+                {fTipo === "subarriendo" && (
+                  <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 12, padding: 14, marginBottom: 12 }}>
+                    <p className="eyebrow" style={{ marginTop: 0 }}>AUTORIZACIÓN DE SUBARRIENDO · LEY 820 DE 2003</p>
+                    <label className="row" style={{ gap: 8, fontSize: 13, fontWeight: 600 }}>
+                      <input type="checkbox" checked={fSubleaseDeclared} onChange={(e) => setFSubleaseDeclared(e.target.checked)} />
+                      Declaro que cuento con autorización escrita del propietario para subarrendar este inmueble.
+                    </label>
+                    <div className="field" style={{ marginTop: 10 }}>
+                      <label>Documento de autorización (PDF, JPG, PNG o WEBP · máx. 8 MB)</label>
+                      <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={(e) => setFSubleaseFile(e.target.files?.[0] ?? null)} />
+                      <p className="muted" style={{ fontSize: 12, margin: "4px 0 0" }}>Se guarda de forma privada: solo tú y el administrador pueden abrirlo.</p>
+                    </div>
+                  </div>
+                )}
                 <div className="field"><label>Descripción {plan === "gratuito" && `(${fDesc.length}/300)`}</label><textarea rows={4} value={fDesc} maxLength={plan === "gratuito" ? 300 : undefined} onChange={(e) => setFDesc(e.target.value)} /></div>
                 <p className="muted">Toca para elegir fotos ({selImgs.length}{plan === "gratuito" ? "/5 máx" : ""}):</p>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
@@ -405,14 +538,14 @@ export default function Panel() {
 
             {imp && importStep === "design" && fTheme && (
               <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 16, padding: 18, marginTop: 14 }}>
-                <p className="eyebrow">DISEÑO SUGERIDO POR IA · AJÚSTALO A TU GUSTO</p>
+                <p className="eyebrow">DISEÑO SUGERIDO SEGÚN TU WEB · AJÚSTALO A TU GUSTO</p>
                 <p className="muted">{fTheme.rationale}</p>
                 <div className="row" style={{ marginTop: 12, gap: 12 }}>
                   <div className="field" style={{ flex: 1 }}><label>Color principal</label><input type="color" value={fTheme.primary} onChange={(e) => setFTheme({ ...fTheme!, primary: e.target.value })} /></div>
                   <div className="field" style={{ flex: 1 }}><label>Color acento</label><input type="color" value={fTheme.accent} onChange={(e) => setFTheme({ ...fTheme!, accent: e.target.value })} /></div>
                   <div className="field"><label>Preset</label><select value={fTheme.preset} onChange={(e) => setFTheme({ ...fTheme!, preset: e.target.value as ListingTheme["preset"] })}><option value="selva">Selva</option><option value="mar">Mar</option><option value="colonial">Colonial</option><option value="urbano">Urbano</option><option value="minimal">Minimal</option></select></div>
                 </div>
-                <div className="field" style={{ marginTop: 12 }}><label>Justificación IA</label><textarea rows={2} value={fTheme.rationale} onChange={(e) => setFTheme({ ...fTheme!, rationale: e.target.value })} /></div>
+                <div className="field" style={{ marginTop: 12 }}><label>Justificación del diseño</label><textarea rows={2} value={fTheme.rationale} onChange={(e) => setFTheme({ ...fTheme!, rationale: e.target.value })} /></div>
                 <h4 style={{ marginTop: 16 }}>Vista previa</h4>
                 <div style={{ background: fTheme.primary, color: "#fff", borderRadius: 12, padding: 16, display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ width: 60, height: 60, background: fTheme.accent, borderRadius: 8 }} />
@@ -423,28 +556,30 @@ export default function Panel() {
                 </div>
                 <div className="row" style={{ marginTop: 12 }}>
                   <button className="btn btn-ghost" onClick={() => setImportStep("data")}><Icon name="arrowLeft" size={14} /> Volver a datos</button>
-                  <button className="btn btn-green" onClick={publicar}><Icon name="rocket" size={15} /> Publicar en biohostel.com</button>
+                  <button className="btn btn-green" onClick={publicar}><Icon name="rocket" size={15} /> Publicar en biohostels.com</button>
                 </div>
               </div>
             )}
 
             <h3 style={{ marginTop: 26 }}>Mis publicaciones ({mine.length}/{plan === "gratuito" ? 1 : plan === "corporativo" ? 20 : "∞"})</h3>
             {mine.length === 0 ? <p className="muted">Nada publicado aún. Importa una web arriba.</p> : (
-              <table className="tbl"><thead><tr><th>TÍTULO</th><th>TIPO</th><th>PRECIO</th><th>FOTOS</th><th>ESTADO</th><th></th></tr></thead>
+              <table className="tbl"><thead><tr><th>TÍTULO</th><th>TIPO</th><th>RNT</th><th>PRECIO</th><th>FOTOS</th><th>ESTADO</th><th></th></tr></thead>
                 <tbody>{mine.map((p) => (
                   <Fragment key={p.id}>
-                    <tr><td>{p.titulo}</td><td>{p.tipo}</td><td>{fmt(p.precioNoche)}</td><td>{p.galeria.length}</td>
+                    <tr><td>{p.titulo}</td><td>{p.tipo}</td>
+                      <td>{p.rnt ? p.rnt : <span className="tag" style={{ background: "#fef3c7", color: "#92400e" }}>Pendiente</span>}</td>
+                      <td>{fmt(p.precioNoche)}</td><td>{p.galeria.length}</td>
                       <td>{p.active === false ? <span className="tag" style={{ background: "#fef3c7", color: "#92400e" }}>Pausada</span> : <span className="tag tag-reserva">Publicada</span>}</td>
                       <td><div className="row">
                         <button className="btn btn-ghost" onClick={() => setEditing(p)}><Icon name="edit" size={14} /> Editar</button>
-                        <button className="btn btn-ghost" onClick={() => { const open = chOpen === p.id ? "" : p.id; setChOpen(open); if (open) loadChannels(p.id); }}>Canales IA</button>
+                        <button className="btn btn-ghost" onClick={() => { const open = chOpen === p.id ? "" : p.id; setChOpen(open); if (open) loadChannels(p.id); }}>Canales</button>
                         <button className="btn btn-ghost" onClick={() => toggleListing(p)}>{p.active === false ? "Activar" : "Pausar"}</button>
                         <button className="btn btn-ghost" onClick={() => eliminarListing(p.id)}>Eliminar</button>
                       </div></td></tr>
                     {chOpen === p.id && (
-                      <tr key={`${p.id}-ch`}><td colSpan={6}>
+                      <tr key={`${p.id}-ch`}><td colSpan={7}>
                         <strong>Canales de “{p.titulo}”</strong>
-                        <p className="muted">Agrega los links de Airbnb/Booking donde está el predio. Con el <strong>iCal</strong> (Airbnb → Disponibilidad → Exportar calendario) la IA lee la ocupación real. Al confirmar una reserva, la IA la marca aquí y te da el feed para devolver el bloqueo a esas plataformas.</p>
+                        <p className="muted">Agrega los links de Airbnb/Booking donde está el predio. Con el <strong>iCal</strong> (Airbnb → Disponibilidad → Exportar calendario) el sistema actualiza las fechas ocupadas cuando pulsas Sincronizar; no hay consulta en tiempo real. Al confirmar una reserva, Biohostels la bloquea y te da el feed iCal para devolver el bloqueo a esas plataformas.</p>
                         {chList.length === 0 ? <p className="muted">Sin canales. Agrega el primero abajo.</p> : (
                           <table className="tbl"><thead><tr><th>PLATAFORMA</th><th>LINK</th><th>OCUPADAS</th><th>SYNC</th><th></th></tr></thead>
                             <tbody>{chList.map((c) => (

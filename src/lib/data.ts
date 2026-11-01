@@ -112,6 +112,15 @@ export type Listing = {
   fechasOcupadasAirbnb: string[];
   slug?: string;
   theme?: ListingTheme;
+  // Cumplimiento: Decreto 1836 de 2021 (RNT) y Ley 820 de 2003 art. 17 (subarriendo)
+  rnt?: string;
+  legalVersion?: number;
+  subleaseAuth?: {
+    confirmed: boolean;
+    docName?: string;
+    docMime?: string;
+    uploadedAt?: string;
+  };
 };
 
 // Catálogo demo 100% Colombia · precios en COP
@@ -149,7 +158,7 @@ export const LISTINGS: Listing[] = [
     anfitrion: { nombre: "Tropical Biohostel", plan: "premium", verificado: true, avatar: "TB", seguidores: 15200 },
     fechasOcupadasBooking: ["2026-10-20", "2026-10-21", "2026-11-02"],
     fechasOcupadasAirbnb: ["2026-10-25", "2026-10-26"],
-    theme: { primary: "#1d4a2c", accent: "#bef264", preset: "selva", font: "sans", rationale: "Eco-natural: verde selva profundo con acento lima, sin serifas modernas" },
+    theme: { primary: "#1f3d2b", accent: "#e8a94a", preset: "selva", font: "sans", rationale: "Selva cafetera: verde bosque propio con acento ámbar, sin serifas modernas" },
   },
   {
     id: "bio-bogota-02",
@@ -307,7 +316,7 @@ export const LISTINGS: Listing[] = [
     anfitrion: { nombre: "Casa Cocora", plan: "gratuito", verificado: true, avatar: "CC", seguidores: 6700 },
     fechasOcupadasBooking: [],
     fechasOcupadasAirbnb: [],
-    theme: { primary: "#1d4a2c", accent: "#bef264", preset: "selva", font: "sans", rationale: "Eco-natural: verde selva con acento lima, sans-serif fresca para viajeros" },
+    theme: { primary: "#4d5d21", accent: "#e8d8a0", preset: "selva", font: "sans", rationale: "Cafetal de Salento: verde oliva con acento crema, sans-serif fresca para viajeros" },
   },
 ];
 
@@ -341,7 +350,7 @@ export const SPONSORS = [
 export const PAQUETES = [
   { id: "voluntariado", nombre: "Voluntariado", precioCOP: 149000, precioNota: "inscripción", desc: "2-8 semanas: hospedaje + comidas por 4h/día de apoyo. Incluye certificado y seguro.", icono: "hands" },
   { id: "inscripcion", nombre: "Inscripción", precioCOP: 59000, precioNota: "/ año", desc: "Membresía viajera: descuentos 15%, cancelación flexible y puntos bio.", icono: "ticket" },
-  { id: "premium-pack", nombre: "Premium Pack", precioCOP: 449000, precioNota: "", desc: "Voluntariado + inscripción + 5 noches gratis en red BioHostel + kit bienvenida.", icono: "gem" },
+  { id: "premium-pack", nombre: "Premium Pack", precioCOP: 449000, precioNota: "", desc: "Voluntariado + inscripción + 5 noches gratis en red Biohostels + kit bienvenida.", icono: "gem" },
 ];
 
 export function comisionPara(plan: PlanId, subtotal: number) {

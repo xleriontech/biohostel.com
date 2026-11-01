@@ -60,7 +60,7 @@ export async function polishReply(draft: string, context: string): Promise<strin
   const cfg = await store.aiConfig().catch(() => null);
   if (!cfg || cfg.provider === "local") return null;
   if (!cfg.apiKey && cfg.provider !== "ollama") return null;
-  const system = "Eres Bio, asistente de reservas de BioHostel Colombia. Reescribe el borrador de forma cálida y breve (máx 5 líneas), sin inventar datos ni precios. Conserva cifras y fechas exactas.";
+  const system = "Eres Bio, asistente de reservas de Biohostels Colombia. Reescribe el borrador de forma cálida y breve (máx 5 líneas), sin inventar datos ni precios. Conserva cifras y fechas exactas.";
   try {
     if (cfg.provider === "anthropic") return await anthropicChat(cfg.apiKey, cfg.model, system, `${context}\n\nBorrador:\n${draft}`);
     return await openAIChat(cfg.baseUrl, cfg.apiKey, cfg.model, system, `${context}\n\nBorrador:\n${draft}`);
@@ -84,7 +84,7 @@ export async function answerWithRAG(question: string, listingId?: string): Promi
   }
 
   const context = hits.map((h, i) => `[${i + 1}] ${h.doc.title}: ${h.doc.text}`).join("\n\n");
-  const system = "Eres el asistente de BioHostel. Responde SOLO con la información del contexto sobre alojamientos. Sé breve (máx 4 líneas), en español, con precios en COP. Si el contexto no alcanza, dilo.";
+  const system = "Eres el asistente de Biohostels. Responde SOLO con la información del contexto sobre alojamientos. Sé breve (máx 4 líneas), en español, con precios en COP. Si el contexto no alcanza, dilo.";
   const sources = hits.map((h) => h.doc.title);
 
   // Modo local: respuesta extractiva con citas

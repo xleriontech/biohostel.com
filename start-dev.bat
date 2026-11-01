@@ -1,8 +1,8 @@
 @echo off
-title BioHostel.com - Next.js Development Server
+title Biohostels.com - Next.js Development Server
 cd /d "%~dp0"
 
-echo === BioHostel.com Servidor de Desarrollo ===
+echo === Biohostels.com Servidor de Desarrollo ===
 echo.
 echo 1. Verificando entorno Node.js...
 node --version >nul 2>&1

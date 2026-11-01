@@ -237,6 +237,7 @@ export function SiteSettingsPanel({ notify }: { notify: (message: string) => voi
           <ColorField label="Fondo" value={settings.design.background} onChange={(v) => update((d) => { d.design.background = v; })} />
           <ColorField label="Superficie" value={settings.design.surface} onChange={(v) => update((d) => { d.design.surface = v; })} />
           <ColorField label="Texto" value={settings.design.ink} onChange={(v) => update((d) => { d.design.ink = v; })} />
+          <ColorField label="Texto suave" value={settings.design.muted} onChange={(v) => update((d) => { d.design.muted = v; })} />
           <ColorField label="Líneas / bordes" value={settings.design.line} onChange={(v) => update((d) => { d.design.line = v; })} />
         </div>
 

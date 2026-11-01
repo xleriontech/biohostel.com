@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual de Identidad Visual | Biohostels</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/montserrat@5.0.0/index.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.0/index.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/playfair-display@5.0.0/index.min.css">
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          'bio-primary': '#1B4D3E',
+          'bio-primary-dark': '#0F3328',
+          'bio-secondary': '#00C9A7',
+          'bio-secondary-soft': '#00A88A',
+          'bio-accent': '#D4A373',
+          'bio-bg': '#FAFAF7',
+          'bio-cream': '#F5F2EC',
+          'bio-text': '#1A1A1A',
+          'bio-text-soft': '#4A4A4A',
+        },
+        fontFamily: {
+          'heading': ['Montserrat', 'sans-serif'],
+          'display': ['Playfair Display', 'serif'],
+          'body': ['Inter', 'sans-serif'],
+        }
+      }
+    }
+  }
+</script>
+<style>
+  * { scroll-behavior: smooth; }
+  body { font-family: 'Inter', sans-serif; background: #FAFAF7; }
+  h1, h2, h3, h4, h5, h6 { font-family: 'Montserrat', sans-serif; }
+  
+  .section-fade { opacity: 0; transform: translateY(30px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+  .section-fade.visible { opacity: 1; transform: translateY(0); }
+  
+  .color-swatch { transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer; }
+  .color-swatch:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(27, 77, 62, 0.15); }
+  
+  .nav-link { position: relative; }
+  .nav-link::after {
+    content: ''; position: absolute; bottom: -4px; left: 0;
+    width: 0; height: 2px; background: #00C9A7;
+    transition: width 0.3s ease;
+  }
+  .nav-link:hover::after, .nav-link.active::after { width: 100%; }
+  
+  .code-block {
+    background: #0F1419; color: #E6EDF3;
+    font-family: 'Courier New', monospace;
+    border-radius: 12px; padding: 1.5rem;
+    overflow-x: auto; font-size: 0.875rem;
+    border: 1px solid #2D333B;
+  }
+  .code-block .keyword { color: #7EE787; }
+  .code-block .string { color: #A5D6FF; }
+  .code-block .comment { color: #8B949E; }
+  .code-block .property { color: #FFA657; }
+  
+  .logo-variant { transition: all 0.4s ease; }
+  .logo-variant:hover { transform: translateY(-5px); }
+  
+  .toast {
+    position: fixed; bottom: 2rem; right: 2rem;
+    background: #1B4D3E; color: white;
+    padding: 1rem 1.5rem; border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    transform: translateY(100px); opacity: 0;
+    transition: all 0.3s ease; z-index: 100;
+    font-family: 'Inter', sans-serif;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  
+  .tab-btn { transition: all 0.3s ease; }
+  .tab-btn.active { background: #1B4D3E; color: white; border-color: #1B4D3E; }
+  .tab-content { display: none; animation: fadeIn 0.5s ease; }
+  .tab-content.active { display: block; }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  .float-anim { animation: float 5s ease-in-out infinite; }
+  
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+  
+  .gradient-text {
+    background: linear-gradient(135deg, #1B4D3E 0%, #0F3328 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .leaf-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath d='M30 5 C20 5 12 15 12 25 C12 35 30 50 30 50 C30 50 48 35 48 25 C48 15 40 5 30 5 Z' fill='%231B4D3E' opacity='0.03'/%3E%3C/svg%3E");
+  }
+  
+  .divider-leaf::before, .divider-leaf::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #1B4D3E20, transparent);
+  }
+</style>
+</head>
+<body class="bg-bio-bg text-bio-text">
+
+<!-- Toast Notification -->
+<div id="toast" class="toast">✓ Copiado al portapapeles</div>
+
+<!-- Navigation -->
+<nav class="fixed top-0 left-0 right-0 bg-bio-bg/95 backdrop-blur-lg z-50 border-b border-bio-primary/10">
+  <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <!-- Mini Logo -->
+      <svg width="36" height="36" viewBox="0 0 100 100" class="float-anim">
+        <defs>
+          <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#1B4D3E"/>
+            <stop offset="100%" stop-color="#0F3328"/>
+          </linearGradient>
+        </defs>
+        <path d="M50 8 C32 8 18 22 18 40 C18 58 35 78 50 92 C65 78 82 58 82 40 C82 22 68 8 50 8 Z" fill="url(#logoGrad)"/>
+        <path d="M50 18 C38 18 28 28 28 40 C28 52 40 66 50 76 C60 66 72 52 72 40 C72 28 62 18 50 18 Z" fill="#FAFAF7" opacity="0.15"/>
+        <line x1="50" y1="28" x2="50" y2="70" stroke="#FAFAF7" stroke-width="1.5" opacity="0.6"/>
+        <line x1="50" y1="40" x2="40" y2="34" stroke="#FAFAF7" stroke-width="1.2" opacity="0.6"/>
+        <line x1="50" y1="50" x2="60" y2="44" stroke="#FAFAF7" stroke-width="1.2" opacity="0.6"/>
+        <circle cx="40" cy="34" r="2" fill="#00C9A7"/>
+        <circle cx="60" cy="44" r="2" fill="#00C9A7"/>
+        <circle cx="50" cy="28" r="2" fill="#00C9A7"/>
+      </svg>
+      <div>
+        <span class="font-heading font-bold text-bio-primary text-lg tracking-tight">Biohostels</span>
+        <span class="hidden sm:block text-[10px] text-bio-text-soft tracking-widest uppercase">Manual de Marca</span>
+      </div>
+    </div>
+    <div class="hidden lg:flex items-center gap-7 text-sm font-medium">
+      <a href="#adn" class="nav-link text-bio-text hover:text-bio-primary">ADN</a>
+      <a href="#logo" class="nav-link text-bio-text hover:text-bio-primary">Logotipo</a>
+      <a href="#colores" class="nav-link text-bio-text hover:text-bio-primary">Colores</a>
+      <a href="#tipografia" class="nav-link text-bio-text hover:text-bio-primary">Tipografía</a>
+      <a href="#elementos" class="nav-link text-bio-text hover:text-bio-primary">Elementos</a>
+      <a href="#aplicaciones" class="nav-link text-bio-text hover:text-bio-primary">Aplicaciones</a>
+      <a href="#tecnico" class="nav-link text-bio-text hover:text-bio-primary">Técnico</a>
+    </div>
+    <button id="menuBtn" class="lg:hidden text-bio-primary">
+      <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+  </div>
+  <div id="mobileMenu" class="lg:hidden hidden bg-bio-bg border-t border-bio-primary/10 px-6 py-4 space-y-3 text-sm">
+    <a href="#adn" class="block py-2 text-bio-text">ADN de la Marca</a>
+    <a href="#logo" class="block py-2 text-bio-text">Logotipo</a>
+    <a href="#colores" class="block py-2 text-bio-text">Colores</a>
+    <a href="#tipografia" class="block py-2 text-bio-text">Tipografía</a>
+    <a href="#elementos" class="block py-2 text-bio-text">Elementos</a>
+    <a href="#aplicaciones" class="block py-2 text-bio-text">Aplicaciones</a>
+    <a href="#tecnico" class="block py-2 text-bio-text">Técnico</a>
+  </div>
+</nav>
+
+<!-- Hero Section -->
+<section class="pt-32 pb-24 px-6 leaf-pattern relative overflow-hidden">
+  <div class="max-w-7xl mx-auto text-center relative z-10">
+    <div class="inline-block mb-8 px-5 py-2 bg-bio-primary/5 rounded-full border border-bio-primary/10">
+      <span class="text-bio-primary text-sm font-medium tracking-wide">📘 Manual de Identidad Visual · Noviembre 2026 · v1.0</span>
+    </div>
+    
+    <!-- Logo Principal Mejorado -->
+    <div class="max-w-md mx-auto mb-10 float-anim">
+      <svg viewBox="0 0 240 280" class="w-full">
+        <defs>
+          <linearGradient id="heroGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#1B4D3E"/>
+            <stop offset="50%" stop-color="#1B4D3E"/>
+            <stop offset="100%" stop-color="#0F3328"/>
+          </linearGradient>
+          <filter id="heroShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="12" stdDeviation="20" flood-color="#1B4D3E" flood-opacity="0.2"/>
+          </filter>
+        </defs>
+        <g filter="url(#heroShadow)">
+          <!-- Forma de hoja/pin principal -->
+          <path d="M120 12 C82 12 52 42 52 82 C52 122 85 165 120 200 C155 165 188 122 188 82 C188 42 158 12 120 12 Z" fill="url(#heroGrad)"/>
+          <!-- Capa interior sutil -->
+          <path d="M120 28 C92 28 70 52 70 82 C70 112 95 145 120 172 C145 145 170 112 170 82 C170 52 148 28 120 28 Z" fill="#FAFAF7" opacity="0.08"/>
+          <!-- Estructura central (tallo) -->
+          <line x1="120" y1="45" x2="120" y2="160" stroke="#FAFAF7" stroke-width="2" opacity="0.5"/>
+          <!-- Ramas con nodos tecnológicos -->
+          <line x1="120" y1="65" x2="95" y2="52" stroke="#FAFAF7" stroke-width="1.5" opacity="0.5"/>
+          <line x1="120" y1="85" x2="145" y2="72" stroke="#FAFAF7" stroke-width="1.5" opacity="0.5"/>
+          <line x1="120" y1="105" x2="98" y2="95" stroke="#FAFAF7" stroke-width="1.5" opacity="0.5"/>
+          <line x1="120" y1="125" x2="142" y2="115" stroke="#FAFAF7" stroke-width="1.5" opacity="0.5"/>
+          <!-- Nodos tecnológicos (teal) -->
+          <circle cx="95" cy="52" r="4" fill="#00C9A7"/>
+          <circle cx="145" cy="72" r="4" fill="#00C9A7"/>
+          <circle cx="98" cy="95" r="4" fill="#00C9A7"/>
+          <circle cx="142" cy="115" r="4" fill="#00C9A7"/>
+          <circle cx="120" cy="45" r="4" fill="#00C9A7" class="pulse-dot"/>
+          <!-- Línea de conexión entre nodos -->
+          <path d="M95 52 L120 45 L145 72" fill="none" stroke="#00C9A7" stroke-width="0.8" opacity="0.4"/>
+          <path d="M98 95 L120 105 L142 115" fill="none" stroke="#00C9A7" stroke-width="0.8" opacity="0.4"/>
+        </g>
+        <!-- Wordmark -->
+        <text x="120" y="235" text-anchor="middle" font-family="Montserrat" font-weight="700" font-size="34" fill="#1B4D3E" letter-spacing="-0.5">Biohostels</text>
+        <!-- Tagline -->
+        <text x="120" y="258" text-anchor="middle" font-family="Inter" font-size="9" letter-spacing="4" fill="#4A4A4A" font-weight="500">ECO-TECH · ACCOMMODATION</text>
+      </svg>
+    </div>
+    
+    <h1 class="font-display font-bold text-5xl md:text-7xl mb-6 leading-tight text-bio-primary-dark">
+      Tecnología que <em class="font-display italic text-bio-primary">regenera</em>
+    </h1>
+    <p class="text-bio-text-soft max-w-2xl mx-auto mb-10 text-lg leading-relaxed">Manual completo de identidad visual, cromática, tipográfica y de aplicación para la plataforma de alojamientos sostenibles con inteligencia artificial.</p>
+    
+    <div class="flex flex-wrap gap-3 justify-center text-xs">
+      <span class="px-4 py-2 bg-white border border-bio-primary/10 rounded-full text-bio-text-soft">🌱 Sostenibilidad</span>
+      <span class="px-4 py-2 bg-white border border-bio-primary/10 rounded-full text-bio-text-soft">⚡ IA Preventiva</span>
+      <span class="px-4 py-2 bg-white border border-bio-primary/10 rounded-full text-bio-text-soft">🔒 Cero Overbooking</span>
+      <span class="px-4 py-2 bg-white border border-bio-primary/10 rounded-full text-bio-text-soft">🌍 Colombia & Mundo</span>
+    </div>
+  </div>
+</section>
+
+<!-- ADN Section -->
+<section id="adn" class="py-24 px-6 section-fade">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-16">
+      <span class="text-bio-primary font-heading font-semibold tracking-widest text-xs uppercase">Capítulo 01</span>
+      <h2 class="font-display font-bold text-4xl md:text-5xl mt-3 mb-4 text-bio-primary-dark">ADN de la Marca</h2>
+      <div class="flex items-center justify-center gap-3">
+        <div class="w-12 h-px bg-bio-primary/30"></div>
+        <div class="w-2 h-2 rounded-full bg-bio-primary"></div>
+        <div class="w-12 h-px bg-bio-primary/30"></div>
+      </div>
+    </div>
+    
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="bg-white p-8 rounded-2xl shadow-sm border border-bio-primary/5 hover:shadow-xl transition-all duration-300">
+        <div class="w-14 h-14 bg-bio-primary/5 rounded-xl flex items-center justify-center mb-5">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1B4D3E" stroke-width="1.8"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        </div>
+        <h3 class="font-heading font-bold text-xl mb-3 text-bio-primary-dark">Sincronización Confiable</h3>
+        <p class="text-bio-text-soft leading-relaxed text-sm">Cero overbooking. Transparencia total. Nuestra IA verifica disponibilidad en Booking, Airbnb e iCal antes de cobrar.</p>
+      </div>
+      
+      <div class="bg-white p-8 rounded-2xl shadow-sm border border-bio-primary/5 hover:shadow-xl transition-all duration-300">
+        <div class="w-14 h-14 bg-bio-primary/5 rounded-xl flex items-center justify-center mb-5">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1B4D3E" stroke-width="1.8"><path d="M12 2v20M12 2a10 10 0 0110 10M12 2a10 10 0 00-10 10"/></svg>
+        </div>
+        <h3 class="font-heading font-bold text-xl mb-3 text-bio-primary-dark">Regeneración</h3>
+        <p class="text-bio-text-soft leading-relaxed text-sm">1 reserva = 1 árbol. Cada transacción genera impacto ambiental positivo medible y verificable.</p>
+      </div>
+      
+      <div class="bg-white p-8 rounded-2xl shadow-sm border border-bio-primary/5 hover:shadow-xl transition-all duration-300">
+        <div class="w-14 h-14 bg-bio-primary/5 rounded-xl flex items-center justify-center mb-5">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1B4D3E" stroke-width="1.8"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <h3 class="font-heading font-bold text-xl mb-3 text-bio-primary-dark">Innovación Pragmática</h3>
+        <p class="text-bio-text-soft leading-relaxed text-sm">Tecnología compleja (Edge Computing / IA) con una experiencia de usuario simple e intuitiva.</p>
+      </div>
+    </div>
+    
+    <div class="mt-12 bg-bio-primary rounded-3xl p-10 md:p-14 text-white relative overflow-hidden">
+      <div class="absolute top-0 right-0 w-64 h-64 bg-bio-secondary/10 rounded-full -translate-y-32 translate-x-32"></div>
+      <div class="absolute bottom-0 left-0 w-48 h-48 bg-bio-secondary/5 rounded-full translate-y-24 -translate-x-24"></div>
+      <div class="grid md:grid-cols-2 gap-10 relative z-10">
+        <div>
+          <h3 class="font-display font-bold text-3xl mb-4">Misión</h3>
+          <p class="text-white/90 text-lg leading-relaxed">Democratizar el acceso a alojamientos sostenibles en Colombia y el mundo, eliminando la fricción del overbooking mediante inteligencia artificial y garantizando un impacto ambiental positivo por cada transacción.</p>
+        </div>
+        <div>
+          <h3 class="font-display font-bold text-3xl mb-4">Nombre</h3>
+          <p class="text-white/90 text-lg leading-relaxed"><strong class="text-bio-secondary">Biohostels</strong> (plural) — Denota red, comunidad y escalabilidad. Una plataforma, múltiples refugios sostenibles conectados por tecnología.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Logo Section -->
+<section id="logo" class="py-24 px-6 bg-white section-fade">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-16">
+      <span class="text-bio-primary font-heading font-semibold tracking-widest text-xs uppercase">Capítulo 02</span>
+      <h2 class="font-display font-bold text-4xl md:text-5xl mt-3 mb-4 text-bio-primary-dark">El Logotipo</h2>
+      <div class="flex items-center justify-center gap-3 mb-6">
+        <div class="w-12 h-px bg-bio-primary/30"></div>
+        <div class="w-2 h-2 rounded-full bg-bio-primary"></div>
+        <div class="w-12 h-px bg-bio-primary/30"></div>
+      </div>
+      <p class="text-bio-text-soft max-w-2xl mx-auto">Fusión de tres elementos semánticos: pin de ubicación, hoja estilizada y nodos de conexión tecnológica.</p>
+    </div>
+    
+    <!-- Logo Tabs -->
+    <div class="flex flex-wrap gap-3 justify-center mb-10">
+      <button class="tab-btn active px-6 py-2.5 rounded-full border border-bio-primary/30 text-sm font-medium" data-tab="principal">Principal Horizontal</button>
+      <button class="tab-btn px-6 py-2.5 rounded-full border border-bio-primary/30 text-sm font-medium" data-tab="vertical">Vertical Apilado</button>
+      <button class="tab-btn px-6 py-2.5 rounded-full border border-bio-primary/30 text-sm font-medium" data-tab="isotipo">Isotipo</button>
+      <button class="tab-btn px-6 py-2.5 rounded-full border border-bio-primary/30 text-sm font-medium" data-tab="mono">Monocromático</button>
+    </div>
+    
+    <!-- Tab Contents -->
+    <div class="bg-bio-cream rounded-3xl p-10 md:p-16 min-h-[420px] flex items-center justify-center border border-bio-primary/5">
+      <div id="tab-principal" class="tab-content active flex flex-col items-center">
+        <svg viewBox="0 0 500 160" class="w-full max-w-2xl">
+          <defs>
+            <linearGradient id="mainGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1B4D3E"/>
+              <stop offset="100%" stop-color="#0F3328"/>
+            </linearGradient>
+          </defs>
+          <!-- Icono -->
+          <g>
+            <path d="M80 10 C55 10 35 30 35 55 C35 80 55 105 80 125 C105 105 125 80 125 55 C125 30 105 10 80 10 Z" fill="url(#mainGrad)"/>
+            <path d="M80 22 C62 22 48 36 48 55 C48 74 62 92 80 108 C98 92 112 74 112 55 C112 36 98 22 80 22 Z" fill="#FAFAF7" opacity="0.08"/>
+            <line x1="80" y1="30" x2="80" y2="100" stroke="#FAFAF7" stroke-width="1.5" opacity="0.5"/>
+            <line x1="80" y1="45" x2="65" y2="38" stroke="#FAFAF7" stroke-width="1.2" opacity="0.5"/>
+            <line x1="80" y1="60" x2="95" y2="52" stroke="#FAFAF7" stroke-width="1.2" opacity="0.5"/>
+            <line x1="80" y1="75" x2="68" y2="70" stroke="#FAFAF7" stroke-width="1.2" opacity="0.5"/>
+            <circle cx="65" cy="38" r="3" fill="#00C9A7"/>
+            <circle cx="95" cy="52" r="3" fill="#00C9A7"/>
+            <circle cx="68" cy="70" r="3" fill="#00C9A7"/>
+            <circle cx="80" cy="30" r="3" fill="#00C9A7"/>
+          </g>
+          <!-- Wordmark -->
+          <text x="150" y="80" font-family="Montserrat" font-weight="700" font-size="52" fill="#1B4D3E" letter-spacing="-1">Biohostels</text>
+          <!-- Tagline -->
+          <text x="150" y="105" font-family="Inter" font-size="11" letter-spacing="5" fill="#4A4A4A" font-weight="500">ECO-TECH · ACCOMMODATION</text>
+        </svg>
+        <p class="mt-8 text-sm text-bio-text-soft">Uso en headers de web y documentos oficiales</p>
+      </div>
+      
+      <div id="tab-vertical" class="tab-content flex flex-col items-center">
+        <svg viewBox="0 0 240 320" class="w-full max-w-xs">
+          <defs>
+            <linearGradient id="vertGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1B4D3E"/>
+              <stop offset="100%" stop-color="#0F3328"/>
+            </linearGradient>
+          </defs>
+          <g>
+            <path d="M120 10 C82 10 52 40 52 80 C52 120 85 165 120 200 C155 165 188 120 188 80 C188 40 158 10 120 10 Z" fill="url(#vertGrad)"/>
+            <path d="M120 28 C92 28 70 52 70 80 C70 108 95 145 120 172 C145 145 170 108 170 80 C170 52 148 28 120 28 Z" fill="#FAFAF7" opacity="0.08"/>
+            <line x1="120" y1="45" x2="120" y2="160" stroke="#FAFAF7" stroke-width="2" opacity="0.5"/>
+            <line x1="120" y1="65" x2="95" y2="52" stroke="#FAFAF7" stroke-width="1.5" opacity="0.5"/>
+            <line x1="120" y1="85" x2="145" y2="72" stroke="#FAFAF7" stroke-width="1.5" opacity="0.5"/>
+            <line x1="120" y1="105" x2="98" y2="95" stroke="#FAFAF7" stroke-width="1.5" opacity="0.5"/>
+            <line x1="120" y1="125" x2="142" y2="115" stroke="#FAFAF7" stroke-width="1.5" opacity="0.5"/>
+            <circle cx="95" cy="52" r="4" fill="#00C9A7"/>
+            <circle cx="145" cy="72" r="4" fill="#00C9A7"/>
+            <circle cx="98" cy="95" r="4" fill="#00C9A7"/>
+            <circle cx="142" cy="115" r="4" fill="#00C9A7"/>
+            <circle cx="120" cy="45" r="4" fill="#00C9A7"/>
+          </g>
+          <text x="120" y="240" text-anchor="middle" font-family="Montserrat" font-weight="700" font-size="32" fill="#1B4D3E" letter-spacing="-0.5">Biohostels</text>
+          <text x="120" y="265" text-anchor="middle" font-family="Inter" font-size="9" letter-spacing="4" fill="#4A4A4A" font-weight="500">ECO-TECH</text>
+          <text x="120" y="280" text-anchor="middle" font-family="Inter" font-size="9" letter-spacing="4" fill="#4A4A4A" font-weight="500">ACCOMMODATION</text>
+        </svg>
+        <p class="mt-8 text-sm text-bio-text-soft">Uso en merchandising, tarjetas y splash screens</p>
+      </div>
+      
+      <div id="tab-isotipo" class="tab-content flex flex-col items-center">
+        <svg viewBox="0 0 200 200" class="w-full max-w-xs">
+          <defs>
+            <linearGradient id="isoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1B4D3E"/>
+              <stop offset="100%" stop-color="#0F3328"/>
+            </linearGradient>
+          </defs>
+          <g>
+            <path d="M100 10 C70 10 45 35 45 65 C45 95 70 130 100 160 C130 130 155 95 155 65 C155 35 130 10 100 10 Z" fill="url(#isoGrad)"/>
+            <path d="M100 25 C78 25 60 42 60 65 C60 88 78 110 100 132 C122 110 140 88 140 65 C140 42 122 25 100 25 Z" fill="#FAFAF7" opacity="0.08"/>
+            <line x1="100" y1="38" x2="100" y2="125" stroke="#FAFAF7" stroke-width="2" opacity="0.5"/>
+            <line x1="100" y1="55" x2="80" y2="45" stroke="#FAFAF7" stroke-width="1.5" opacity="0.5"/>
+            <line x1="100" y1="75" x2="120" y2="65" stroke="#FAFAF7" stroke-width="1.5" opacity="0.5"/>
+            <line x1="100" y1="95" x2="82" y2="88" stroke="#FAFAF7" stroke-width="1.5" opacity="0.5"/>
+            <line x1="100" y1="115" x2="118" y2="108" stroke="#FAFAF7" stroke-width="1.5" opacity="0.5"/>
+            <circle cx="80" cy="45" r="4" fill="#00C9A7"/>
+            <circle cx="120" cy="65" r="4" fill="#00C9A7"/>
+            <circle cx="82" cy="88" r="4" fill="#00C9A7"/>
+            <circle cx="118" cy="108" r="4" fill="#00C9A7"/>
+            <circle cx="100" cy="38" r="4" fill="#00C9A7"/>
+          </g>
+        </svg>
+        <p class="mt-8 text-sm text-bio-text-soft">Favicons, avatares de redes sociales y loaders</p>
+      </div>
+      
+      <div id="tab-mono" class="tab-content flex flex-col items-center gap-8">
+        <div class="bg-bio-primary-dark p-10 rounded-2xl w-full max-w-md">
+          <svg viewBox="0 0 400 100" class="w-full">
+            <g>
+              <path d="M50 10 C30 10 15 25 15 45 C15 65 30 85 50 95 C70 85 85 65 85 45 C85 25 70 10 50 10 Z" fill="#FFFFFF"/>
+              <line x1="50" y1="22" x2="50" y2="80" stroke="#1B4D3E" stroke-width="1.5" opacity="0.5"/>
+              <line x1="50" y1="35" x2="38" y2="28" stroke="#1B4D3E" stroke-width="1.2" opacity="0.5"/>
+              <line x1="50" y1="50" x2="62" y2="43" stroke="#1B4D3E" stroke-width="1.2" opacity="0.5"/>
+              <circle cx="38" cy="28" r="2.5" fill="#FFFFFF"/>
+              <circle cx="62" cy="43" r="2.5" fill="#FFFFFF"/>
+              <circle cx="50" cy="22" r="2.5" fill="#FFFFFF"/>
+            </g>
+            <text x="100" y="60" font-family="Montserrat" font-weight="700" font-size="32" fill="#FFFFFF" letter-spacing="-0.5">Biohostels</text>
+          </svg>
+        </div>
+        <div class="bg-white p-10 rounded-2xl border border-bio-primary/10 w-full max-w-md">
+          <svg viewBox="0 0 400 100" class="w-full">
+            <g>
+              <path d="M50 10 C30 10 15 25 15 45 C15 65 30 85 50 95 C70 85 85 65 85 45 C85 25 70 10 50 10 Z" fill="#1A1A1A"/>
+              <line x1="50" y1="22" x2="50" y2="80" stroke="#FFFFFF" stroke-width="1.5" opacity="0.3"/>
+              <line x1="50" y1="35" x2="38" y2="28" stroke="#FFFFFF" stroke-width="1.2" opacity="0.3"/>
+              <line x1="50" y1="50" x2="62" y2="43" stroke="#FFFFFF" stroke-width="1.2" opacity="0.3"/>
+              <circle cx="38" cy="28" r="2.5" fill="#1A1A1A"/>
+              <circle cx="62" cy="43" r="2.5" fill="#1A1A1A"/>
+              <circle cx="50" cy="22" r="2.5" fill="#1A1A1A"/>
+            </g>
+            <text x="100" y="60" font-family="Montserrat" font-weight="700" font-size="32" fill="#1A1A1A" letter-spacing="-0.5">Biohostels</text>
+          </svg>
+        </div>
+        <p class="text-sm text-bio-text-soft">Blanco sobre fondo oscuro · Negro sobre fondo claro</p>
+      </div>
+    </div>
+    
+    <!-- Zona de protección -->
+    <div class="mt-12 grid md:grid-cols-2 gap-8">
+      <div class="bg-bio-cream rounded-2xl p-8 border border-bio-primary/5">
+        <h3 class="font-heading font-bold text-xl mb-4 text-bio-primary-dark">🛡️ Área de Protección</h3>
+        <div class="relative bg-white p-12 rounded-xl border-2 border-dashed border-bio-primary/20">
+          <div class="absolute inset-6 border border-bio-primary/20 rounded"></div>
+          <svg viewBox="0 0 100 100" class="w-20 mx-auto relative z-10">
+            <path d="M50 5 C30 5 15 25 15 50 C15 75 50 95 50 95 C50 95 85 75 85 50 C85 25 70 5 50 5 Z" fill="#1B4D3E"/>
+            <circle cx="35" cy="35" r="3" fill="#00C9A7"/>
+            <circle cx="65" cy="45" r="3" fill="#00C9A7"/>
+            <circle cx="50" cy="25" r="3" fill="#00C9A7"/>
+          </svg>
+        </div>
+        <p class="mt-4 text-sm text-bio-text-soft">Espacio equivalente a la altura de la "B" de Biohostels alrededor del logotipo.</p>
+      </div>
+      
+      <div class="bg-bio-cream rounded-2xl p-8 border border-bio-primary/5">
+        <h3 class="font-heading font-bold text-xl mb-4 text-bio-primary-dark">📏 Tamaño Mínimo</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-white p-6 rounded-xl text-center border border-bio-primary/5">
+            <div class="text-3xl font-bold text-bio-primary mb-2 font-heading">120px</div>
+            <div class="text-sm text-bio-text-soft">Ancho mínimo digital</div>
+          </div>
+          <div class="bg-white p-6 rounded-xl text-center border border-bio-primary/5">
+            <div class="text-3xl font-bold text-bio-primary mb-2 font-heading">25mm</div>
+            <div class="text-sm text-bio-text-soft">Ancho mínimo impreso</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Usos incorrectos -->
+    <div class="mt-10 bg-red-50/50 border border-red-200/50 rounded-2xl p-8">
+      <h3 class="font-heading font-bold text-xl mb-4 text-red-800">❌ Usos Incorrectos (Prohibidos)</h3>
+      <div class="grid md:grid-cols-4 gap-4 text-sm">
+        <div class="bg-white p-4 rounded-lg text-center border border-red-100">
+          <div class="text-4xl mb-2">🙅</div>
+          <p class="text-bio-text-soft text-xs">No estirar ni comprimir</p>
+        </div>
+        <div class="bg-white p-4 rounded-lg text-center border border-red-100">
+          <div class="text-4xl mb-2">🎨</div>
+          <p class="text-bio-text-soft text-xs">No usar colores no autorizados</p>
+        </div>
+        <div class="bg-white p-4 rounded-lg text-center border border-red-100">
+          <div class="text-4xl mb-2">💫</div>
+          <p class="text-bio-text-soft text-xs">No aplicar sombras ni efectos</p>
+        </div>
+        <div class="bg-white p-4 rounded-lg text-center border border-red-100">
+          <div class="text-4xl mb-2">🔄</div>
+          <p class="text-bio-text-soft text-xs">No rotar el logotipo</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Colores Section -->
+<section id="colores" class="py-24 px-6 section-fade">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-16">
+      <span class="text-bio-primary font-heading font-semibold tracking-widest text-xs uppercase">Capítulo 03</span>
+      <h2 class="font-display font-bold text-4xl md:text-5xl mt-3 mb-4 text-bio-primary-dark">Sistema Cromático</h2>
+      <div class="flex items-center justify-center gap-3 mb-6">
+        <div class="w-12 h-px bg-bio-primary/30"></div>
+        <div class="w-2 h-2 rounded-full bg-bio-primary"></div>
+        <div class="w-12 h-px bg-bio-primary/30"></div>
+      </div>
+      <p class="text-bio-text-soft max-w-2xl mx-auto">Confianza (verde), innovación tecnológica (teal) y calidez humana (tierra). Haz clic en cualquier color para copiar su código.</p>
+    </div>
+    
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Color 1 -->
+      <div class="color-swatch bg-white rounded-2xl overflow-hidden shadow-sm border border-bio-primary/5" onclick="copyColor('#1B4D3E', 'Bio Green')">
+        <div class="h-44 bg-[#1B4D3E] flex items-end p-6 relative">
+          <div class="absolute top-4 right-4 w-3 h-3 rounded-full bg-bio-secondary pulse-dot"></div>
+          <span class="text-white font-heading font-bold text-2xl">Bio Green</span>
+        </div>
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-xs text-bio-text-soft font-medium uppercase tracking-wider">Primario</span>
+            <span class="text-xs px-2 py-1 bg-bio-primary/10 text-bio-primary rounded font-medium">WCAG AA ✓</span>
+          </div>
+          <div class="space-y-1 font-mono text-sm">
+            <div class="flex justify-between"><span class="text-bio-text-soft">HEX</span><span class="font-bold">#1B4D3E</span></div>
+            <div class="flex justify-between"><span class="text-bio-text-soft">RGB</span><span>27, 77, 62</span></div>
+            <div class="flex justify-between"><span class="text-bio-text-soft">CMYK</span><span>85, 45, 65, 35</span></div>
+          </div>
+          <p class="mt-4 text-xs text-bio-text-soft leading-relaxed">Logotipo, headers, botones primarios, textos de énfasis. Color principal de la marca.</p>
+        </div>
+      </div>
+      
+      <!-- Color 2 -->
+      <div class="color-swatch bg-white rounded-2xl overflow-hidden shadow-sm border border-bio-primary/5" onclick="copyColor('#00C9A7', 'Sync Teal')">
+        <div class="h-44 bg-[#00C9A7] flex items-end p-6 relative">
+          <div class="absolute top-4 right-4 w-3 h-3 rounded-full bg-white pulse-dot"></div>
+          <span class="text-white font-heading font-bold text-2xl">Sync Teal</span>
+        </div>
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-xs text-bio-text-soft font-medium uppercase tracking-wider">Secundario · Acento</span>
+            <span class="text-xs px-2 py-1 bg-bio-secondary/10 text-bio-secondary-soft rounded font-medium">Solo acentos</span>
+          </div>
+          <div class="space-y-1 font-mono text-sm">
+            <div class="flex justify-between"><span class="text-bio-text-soft">HEX</span><span class="font-bold">#00C9A7</span></div>
+            <div class="flex justify-between"><span class="text-bio-text-soft">RGB</span><span>0, 201, 167</span></div>
+            <div class="flex justify-between"><span class="text-bio-text-soft">CMYK</span><span>65, 0, 35, 0</span></div>
+          </div>
+          <p class="mt-4 text-xs text-bio-text-soft leading-relaxed">Iconos de IA, estados "Verificado", nodos tecnológicos en el logo, badges. <strong>Nunca en texto principal.</strong></p>
+        </div>
+      </div>
+      
+      <!-- Color 3 -->
+      <div class="color-swatch bg-white rounded-2xl overflow-hidden shadow-sm border border-bio-primary/5" onclick="copyColor('#D4A373', 'Tierra Andina')">
+        <div class="h-44 bg-[#D4A373] flex items-end p-6 relative">
+          <div class="absolute top-4 right-4 w-3 h-3 rounded-full bg-white pulse-dot"></div>
+          <span class="text-white font-heading font-bold text-2xl">Tierra Andina</span>
+        </div>
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-xs text-bio-text-soft font-medium uppercase tracking-wider">Acento Cálido</span>
+            <span class="text-xs px-2 py-1 bg-bio-accent/10 text-bio-accent rounded font-medium">Decorativo</span>
+          </div>
+          <div class="space-y-1 font-mono text-sm">
+            <div class="flex justify-between"><span class="text-bio-text-soft">HEX</span><span class="font-bold">#D4A373</span></div>
+            <div class="flex justify-between"><span class="text-bio-text-soft">RGB</span><span>212, 163, 115</span></div>
+            <div class="flex justify-between"><span class="text-bio-text-soft">CMYK</span><span>15, 35, 55, 0</span></div>
+          </div>
+          <p class="mt-4 text-xs text-bio-text-soft leading-relaxed">Badges "1 Reserva = 1 Árbol", detalles cálidos, ilustraciones de naturaleza.</p>
+        </div>
+      </div>
+      
+      <!-- Color 4 -->
+      <div class="color-swatch bg-white rounded-2xl overflow-hidden shadow-sm border border-bio-primary/5" onclick="copyColor('#FAFAF7', 'Bio Cream')">
+        <div class="h-44 bg-[#FAFAF7] flex items-end p-6 border-b border-bio-primary/10 relative">
+          <div class="absolute top-4 right-4 w-3 h-3 rounded-full bg-bio-primary/20"></div>
+          <span class="text-bio-primary font-heading font-bold text-2xl">Bio Cream</span>
+        </div>
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-xs text-bio-text-soft font-medium uppercase tracking-wider">Neutro Cálido</span>
+          </div>
+          <div class="space-y-1 font-mono text-sm">
+            <div class="flex justify-between"><span class="text-bio-text-soft">HEX</span><span class="font-bold">#FAFAF7</span></div>
+            <div class="flex justify-between"><span class="text-bio-text-soft">RGB</span><span>250, 250, 247</span></div>
+            <div class="flex justify-between"><span class="text-bio-text-soft">CMYK</span><span>1, 1, 2, 0</span></div>
+          </div>
+          <p class="mt-4 text-xs text-bio-text-soft leading-relaxed">Fondo principal de la plataforma. Cálido, orgánico, diferente al blanco frío.</p>
+        </div>
+      </div>
+      
+      <!-- Color 5 -->
+      <div class="color-swatch bg-white rounded-2xl overflow-hidden shadow-sm border border-bio-primary/5" onclick="copyColor('#1A1A1A', 'Texto Base')">
+        <div class="h-44 bg-[#1A1A1A] flex items-end p-6 relative">
+          <div class="absolute top-4 right-4 w-3 h-3 rounded-full bg-white/30"></div>
+          <span class="text-white font-heading font-bold text-2xl">Texto Base</span>
+        </div>
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-3">
+            <span class="text-xs text-bio-text-soft font-medium uppercase tracking-wider">Neutro Oscuro</span>
+          </div>
+          <div class="space-y-1 font-mono text-sm">
+            <div class="flex justify-between"><span class="text-bio-text-soft">HEX</span><span class="font-bold">#1A1A1A</span></div>
+            <div class="flex justify-between"><span class="text-bio-text-soft">RGB</span><span>26, 26, 26</span></div>
+            <div class="flex justify-between"><span class="text-bio-text-soft">CMYK</span><span>80, 75, 70, 85</span></div>
+          </div>
+          <p class="mt-4 text-xs text-bio-text-soft leading-relaxed">Párrafos, cuerpos de texto, footers. Más suave que el negro puro.</p>
+        </div>
+      </div>
+      
+      <!-- Contraste demo -->
+      <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-bio-primary/5 p-6">
+        <h4 class="font-heading font-bold mb-4 text-bio-primary-dark">🔍 Prueba de Contraste</h4>
+        <div class="space-y-3">
+          <div class="bg-[#1B4D3E] p-4 rounded-lg">
+            <p class="text-white text-sm font-medium">Texto blanco sobre Bio Green</p>
+            <p class="text-white/70 text-xs mt-1">Ratio: 7.2:1 ✓ AAA</p>
+          </div>
+          <div class="bg-[#1A1A1A] p-4 rounded-lg">
+            <p class="text-white text-sm font-medium">Texto blanco sobre Texto Base</p>
+            <p class="text-white/70 text-xs mt-1">Ratio: 17.4:1 ✓ AAA</p>
+          </div>
+          <div class="bg-[#FAFAF7] p-4 rounded-lg border border-bio-primary/10">
+            <p class="text-bio-primary text-sm font-medium">Bio Green sobre Bio Cream</p>
+            <p class="text-bio-text-soft text-xs mt-1">Ratio: 8.5:1 ✓ AAA</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Tipografía Section -->
+<section id="tipografia" class="py-24 px-6 bg-white section-fade">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-16">
+      <span class="text-bio-primary font-heading font-semibold tracking-widest text-xs uppercase">Capítulo 04</span>
+      <h2 class="font-display font-bold text-4xl md:text-5xl mt-3 mb-4 text-bio-primary-dark">Sistema Tipográfico</h2>
+      <div class="flex items-center justify-center gap-3 mb-6">
+        <div class="w-12 h-px bg-bio-primary/30"></div>
+        <div class="w-2 h-2 rounded-full bg-bio-primary"></div>
+        <div class="w-12 h-px bg-bio-primary/30"></div>
+      </div>
+      <p class="text-bio-text-soft max-w-2xl mx-auto">Legibilidad en pantallas y optimización de Web Vitals. Disponible en Fontsource CDN.</p>
+    </div>
+    
+    <div class="grid lg:grid-cols-2 gap-8">
+      <!-- Montserrat -->
+      <div class="bg-bio-cream rounded-2xl p-8 border border-bio-primary/5">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h3 class="font-heading font-bold text-2xl text-bio-primary">Montserrat</h3>
+            <p class="text-sm text-bio-text-soft mt-1">Tipografía Principal · Headings</p>
+          </div>
+          <span class="text-xs px-3 py-1 bg-bio-primary text-white rounded-full font-medium">Bold / SemiBold</span>
+        </div>
+        
+        <div class="space-y-4">
+          <div class="border-b border-bio-primary/10 pb-4">
+            <div class="text-xs text-bio-text-soft mb-1 uppercase tracking-wider">H1 · 48px · Bold 700</div>
+            <p class="font-heading font-bold text-5xl text-bio-primary-dark">Título Principal</p>
+          </div>
+          <div class="border-b border-bio-primary/10 pb-4">
+            <div class="text-xs text-bio-text-soft mb-1 uppercase tracking-wider">H2 · 36px · Bold 700</div>
+            <p class="font-heading font-bold text-4xl text-bio-primary-dark">Subtítulo</p>
+          </div>
+          <div class="border-b border-bio-primary/10 pb-4">
+            <div class="text-xs text-bio-text-soft mb-1 uppercase tracking-wider">H3 · 24px · SemiBold 600</div>
+            <p class="font-heading font-semibold text-2xl text-bio-primary-dark">Sección</p>
+          </div>
+          <div>
+            <div class="text-xs text-bio-text-soft mb-1 uppercase tracking-wider">H4 · 20px · SemiBold 600</div>
+            <p class="font-heading font-semibold text-xl text-bio-primary-dark">Subsección</p>
+          </div>
+        </div>
+        
+        <div class="mt-6 bg-white p-4 rounded-lg border border-bio-primary/5">
+          <div class="text-xs text-bio-text-soft mb-2 uppercase tracking-wider">Justificación</div>
+          <p class="text-sm text-bio-text-soft">Geométrica, moderna y con presencia. Transmite solidez tecnológica y claridad.</p>
+        </div>
+      </div>
+      
+      <!-- Inter -->
+      <div class="bg-bio-cream rounded-2xl p-8 border border-bio-primary/5">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h3 class="font-heading font-bold text-2xl text-bio-primary">Inter</h3>
+            <p class="text-sm text-bio-text-soft mt-1">Tipografía Secundaria · Cuerpo y UI</p>
+          </div>
+          <span class="text-xs px-3 py-1 bg-bio-primary text-white rounded-full font-medium">Regular / Medium</span>
+        </div>
+        
+        <div class="space-y-4">
+          <div class="border-b border-bio-primary/10 pb-4">
+            <div class="text-xs text-bio-text-soft mb-1 uppercase tracking-wider">Body · 16px · Regular 400</div>
+            <p class="font-body text-base text-bio-text leading-relaxed">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.</p>
+          </div>
+          <div class="border-b border-bio-primary/10 pb-4">
+            <div class="text-xs text-bio-text-soft mb-1 uppercase tracking-wider">Small · 14px · Regular 400</div>
+            <p class="font-body text-sm text-bio-text">Texto para descripciones, metadatos y contenido secundario.</p>
+          </div>
+          <div class="border-b border-bio-primary/10 pb-4">
+            <div class="text-xs text-bio-text-soft mb-1 uppercase tracking-wider">Button · 14px · Medium 500</div>
+            <div class="flex gap-2">
+              <button class="font-body font-medium text-sm bg-bio-primary text-white px-6 py-2 rounded-lg hover:bg-bio-primary-dark transition">Botón Principal</button>
+              <button class="font-body font-medium text-sm bg-white text-bio-primary border border-bio-primary px-6 py-2 rounded-lg hover:bg-bio-primary/5 transition">Secundario</button>
+            </div>
+          </div>
+          <div>
+            <div class="text-xs text-bio-text-soft mb-1 uppercase tracking-wider">Caption · 12px · Regular 400</div>
+            <p class="font-body text-xs text-bio-text-soft">Pie de foto, notas legales, textos auxiliares.</p>
+          </div>
+        </div>
+        
+        <div class="mt-6 bg-white p-4 rounded-lg border border-bio-primary/5">
+          <div class="text-xs text-bio-text-soft mb-2 uppercase tracking-wider">Justificación</div>
+          <p class="text-sm text-bio-text-soft">Diseñada específicamente para interfaces de usuario. Alta legibilidad en tamaños pequeños.</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Escala tipográfica -->
+    <div class="mt-10 bg-bio-primary rounded-2xl p-8 text-white relative overflow-hidden">
+      <div class="absolute top-0 right-0 w-48 h-48 bg-bio-secondary/10 rounded-full -translate-y-24 translate-x-24"></div>
+      <h3 class="font-heading font-bold text-xl mb-6 relative z-10">📐 Escala Tipográfica Modular (1.25)</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 relative z-10">
+        <div class="bg-white/10 p-4 rounded-lg backdrop-blur">
+          <div class="text-3xl font-bold font-heading">2.441</div>
+          <div class="text-sm text-white/70 mt-1">~39px · Display</div>
+        </div>
+        <div class="bg-white/10 p-4 rounded-lg backdrop-blur">
+          <div class="text-2xl font-bold font-heading">1.953</div>
+          <div class="text-sm text-white/70 mt-1">~31px · H1</div>
+        </div>
+        <div class="bg-white/10 p-4 rounded-lg backdrop-blur">
+          <div class="text-xl font-bold font-heading">1.563</div>
+          <div class="text-sm text-white/70 mt-1">~25px · H2</div>
+        </div>
+        <div class="bg-white/10 p-4 rounded-lg backdrop-blur">
+          <div class="text-lg font-bold font-heading">1.250</div>
+          <div class="text-sm text-white/70 mt-1">~20px · H3</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Elementos Section -->
+<section id="elementos" class="py-24 px-6 section-fade">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-16">
+      <span class="text-bio-primary font-heading font-semibold tracking-widest text-xs uppercase">Capítulo 05</span>
+      <h2 class="font-display font-bold text-4xl md:text-5xl mt-3 mb-4 text-bio-primary-dark">Elementos Gráficos</h2>
+      <div class="flex items-center justify-center gap-3 mb-6">
+        <div class="w-12 h-px bg-bio-primary/30"></div>
+        <div class="w-2 h-2 rounded-full bg-bio-primary"></div>
+        <div class="w-12 h-px bg-bio-primary/30"></div>
+      </div>
+    </div>
+    
+    <!-- Iconografía -->
+    <div class="bg-white rounded-3xl p-10 mb-8 border border-bio-primary/5">
+      <h3 class="font-heading font-bold text-2xl mb-2 text-bio-primary-dark">🎨 Iconografía</h3>
+      <p class="text-bio-text-soft mb-8 text-sm">Lineal (outline), grosor 1.8px, esquinas redondeadas (border-radius: 4px). Color principal: Bio Green. Acento: Sync Teal solo en estados activos.</p>
+      
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+        <div class="text-center p-4 rounded-lg hover:bg-bio-cream transition">
+          <div class="w-16 h-16 mx-auto mb-2 flex items-center justify-center">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1B4D3E" stroke-width="1.8" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <p class="text-xs text-bio-text-soft">Verificado</p>
+        </div>
+        <div class="text-center p-4 rounded-lg hover:bg-bio-cream transition">
+          <div class="w-16 h-16 mx-auto mb-2 flex items-center justify-center">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1B4D3E" stroke-width="1.8" stroke-linecap="round"><path d="M12 2v20M12 2a10 10 0 0110 10M12 2a10 10 0 00-10 10"/></svg>
+          </div>
+          <p class="text-xs text-bio-text-soft">Regeneración</p>
+        </div>
+        <div class="text-center p-4 rounded-lg hover:bg-bio-cream transition">
+          <div class="w-16 h-16 mx-auto mb-2 flex items-center justify-center">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1B4D3E" stroke-width="1.8" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <p class="text-xs text-bio-text-soft">Ubicación</p>
+        </div>
+        <div class="text-center p-4 rounded-lg hover:bg-bio-cream transition">
+          <div class="w-16 h-16 mx-auto mb-2 flex items-center justify-center">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1B4D3E" stroke-width="1.8" stroke-linecap="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          </div>
+          <p class="text-xs text-bio-text-soft">Capas</p>
+        </div>
+        <div class="text-center p-4 rounded-lg hover:bg-bio-cream transition">
+          <div class="w-16 h-16 mx-auto mb-2 flex items-center justify-center">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1B4D3E" stroke-width="1.8" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          </div>
+          <p class="text-xs text-bio-text-soft">IA / Sync</p>
+        </div>
+        <div class="text-center p-4 rounded-lg hover:bg-bio-cream transition">
+          <div class="w-16 h-16 mx-auto mb-2 flex items-center justify-center">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1B4D3E" stroke-width="1.8" stroke-linecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+          </div>
+          <p class="text-xs text-bio-text-soft">Comunidad</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Sello de Impacto -->
+    <div class="grid md:grid-cols-2 gap-8">
+      <div class="bg-white rounded-3xl p-10 border border-bio-primary/5">
+        <h3 class="font-heading font-bold text-2xl mb-6 text-bio-primary-dark">🌱 Sello de Impacto</h3>
+        <div class="flex items-center justify-center py-8">
+          <div class="relative w-48 h-48">
+            <svg viewBox="0 0 200 200" class="w-full">
+              <circle cx="100" cy="100" r="90" fill="none" stroke="#D4A373" stroke-width="3"/>
+              <circle cx="100" cy="100" r="82" fill="#FAFAF7"/>
+              <g transform="translate(100, 90)">
+                <path d="M0 -25 C-12 -25 -22 -12 -22 0 C-22 12 0 25 0 25 C0 25 22 12 22 0 C22 -12 12 -25 0 -25 Z" fill="#1B4D3E"/>
+                <line x1="0" y1="-12" x2="0" y2="18" stroke="#FAFAF7" stroke-width="1.5" opacity="0.6"/>
+                <line x1="0" y1="-3" x2="-7" y2="-9" stroke="#FAFAF7" stroke-width="1.2" opacity="0.6"/>
+                <line x1="0" y1="5" x2="7" y2="-1" stroke="#FAFAF7" stroke-width="1.2" opacity="0.6"/>
+                <circle cx="-7" cy="-9" r="2" fill="#00C9A7"/>
+                <circle cx="7" cy="-1" r="2" fill="#00C9A7"/>
+                <circle cx="0" cy="-12" r="2" fill="#00C9A7"/>
+              </g>
+              <text x="100" y="150" text-anchor="middle" font-family="Montserrat" font-weight="700" font-size="11" fill="#1B4D3E">1 RESERVA</text>
+              <text x="100" y="165" text-anchor="middle" font-family="Montserrat" font-weight="700" font-size="11" fill="#1B4D3E">= 1 ÁRBOL</text>
+            </svg>
+          </div>
+        </div>
+        <p class="text-sm text-bio-text-soft text-center">Aparece en checkout y en cada tarjeta de alojamiento.</p>
+      </div>
+      
+      <div class="bg-white rounded-3xl p-10 border border-bio-primary/5">
+        <h3 class="font-heading font-bold text-2xl mb-6 text-bio-primary-dark">📸 Estilo Fotográfico</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="aspect-square rounded-lg bg-gradient-to-br from-green-700 to-green-900 flex items-center justify-center">
+            <span class="text-white font-bold text-sm text-center px-2">Luz natural</span>
+          </div>
+          <div class="aspect-square rounded-lg bg-gradient-to-br from-amber-700 to-amber-900 flex items-center justify-center">
+            <span class="text-white font-bold text-sm text-center px-2">Espacios reales</span>
+          </div>
+          <div class="aspect-square rounded-lg bg-gradient-to-br from-emerald-800 to-teal-900 flex items-center justify-center">
+            <span class="text-white font-bold text-sm text-center px-2">Vegetación</span>
+          </div>
+          <div class="aspect-square rounded-lg bg-gradient-to-br from-orange-700 to-red-900 flex items-center justify-center">
+            <span class="text-white font-bold text-sm text-center px-2">Anfitriones</span>
+          </div>
+        </div>
+        <p class="mt-4 text-sm text-bio-text-soft">Autenticidad sobre perfección. Ligera saturación en verdes y cálidos, sin filtros artificiales.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Aplicaciones Section -->
+<section id="aplicaciones" class="py-24 px-6 bg-white section-fade">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-16">
+      <span class="text-bio-primary font-heading font-semibold tracking-widest text-xs uppercase">Capítulo 06</span>
+      <h2 class="font-display font-bold text-4xl md:text-5xl mt-3 mb-4 text-bio-primary-dark">Aplicaciones Prácticas</h2>
+      <div class="flex items-center justify-center gap-3 mb-6">
+        <div class="w-12 h-px bg-bio-primary/30"></div>
+        <div class="w-2 h-2 rounded-full bg-bio-primary"></div>
+        <div class="w-12 h-px bg-bio-primary/30"></div>
+      </div>
+    </div>
+    
+    <!-- Mockup Header -->
+    <div class="mb-10">
+      <h3 class="font-heading font-bold text-2xl mb-4 text-bio-primary-dark">🌐 Interfaz Web (Header)</h3>
+      <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-bio-primary/10">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-bio-primary/5">
+          <div class="flex items-center gap-3">
+            <svg width="32" height="32" viewBox="0 0 100 100">
+              <path d="M50 8 C32 8 18 22 18 40 C18 58 35 78 50 92 C65 78 82 58 82 40 C82 22 68 8 50 8 Z" fill="#1B4D3E"/>
+              <circle cx="35" cy="35" r="3" fill="#00C9A7"/>
+              <circle cx="65" cy="45" r="3" fill="#00C9A7"/>
+              <circle cx="50" cy="25" r="3" fill="#00C9A7"/>
+            </svg>
+            <span class="font-heading font-bold text-bio-primary text-lg">Biohostels</span>
+          </div>
+          <div class="hidden md:flex gap-6 text-sm text-bio-text-soft">
+            <span class="hover:text-bio-primary cursor-pointer transition">Explorar</span>
+            <span class="hover:text-bio-primary cursor-pointer transition">Anfitriones</span>
+            <span class="hover:text-bio-primary cursor-pointer transition">Impacto</span>
+          </div>
+          <div class="flex gap-2">
+            <button class="text-sm px-4 py-2 border border-bio-primary text-bio-primary rounded-lg font-medium hover:bg-bio-primary/5 transition">Explora</button>
+            <button class="text-sm px-4 py-2 bg-bio-primary text-white rounded-lg font-medium hover:bg-bio-primary-dark transition">Publica tu espacio</button>
+          </div>
+        </div>
+        <div class="bg-gradient-to-br from-bio-cream to-green-50 p-12 text-center">
+          <h4 class="font-display font-bold text-3xl text-bio-primary-dark mb-3">Reserva hostels y subarriendos con IA</h4>
+          <p class="text-bio-text-soft mb-6">Cero overbooking · 1 reserva = 1 árbol</p>
+          <button class="bg-bio-primary text-white px-8 py-3 rounded-full font-medium hover:bg-bio-primary-dark transition">Comenzar</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Mockup Card -->
+    <div class="mb-10">
+      <h3 class="font-heading font-bold text-2xl mb-4 text-bio-primary-dark">🏡 Card de Alojamiento</h3>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="bg-white rounded-2xl overflow-hidden shadow-md border border-bio-primary/5 hover:shadow-xl transition">
+          <div class="relative h-48 bg-gradient-to-br from-green-700 to-emerald-900">
+            <div class="absolute top-3 left-3 bg-bio-primary text-white text-xs px-3 py-1.5 rounded-full font-medium flex items-center gap-1.5">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Fechas verificadas
+            </div>
+            <div class="absolute bottom-3 right-3 bg-white/95 backdrop-blur px-3 py-1.5 rounded-full text-xs font-bold text-bio-primary">
+              $180.000/noche
+            </div>
+          </div>
+          <div class="p-5">
+            <div class="flex items-center gap-1 mb-2">
+              <span class="text-amber-500 text-sm">★★★★★</span>
+              <span class="text-xs text-bio-text-soft">4.93 (12 reseñas)</span>
+            </div>
+            <h4 class="font-heading font-bold text-lg mb-1 text-bio-primary-dark">Tropical Biohostel</h4>
+            <p class="text-sm text-bio-text-soft mb-4">Cabaña entre cafetales · Nocaima</p>
+            <div class="flex items-center gap-2 text-xs text-bio-primary font-medium">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M12 2a10 10 0 0110 10M12 2a10 10 0 00-10 10"/></svg>
+              1 reserva = 1 árbol
+            </div>
+          </div>
+        </div>
+        
+        <div class="bg-white rounded-2xl overflow-hidden shadow-md border border-bio-primary/5 hover:shadow-xl transition">
+          <div class="relative h-48 bg-gradient-to-br from-teal-800 to-cyan-900">
+            <div class="absolute top-3 left-3 bg-bio-primary text-white text-xs px-3 py-1.5 rounded-full font-medium flex items-center gap-1.5">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Sincronizado
+            </div>
+            <div class="absolute bottom-3 right-3 bg-white/95 backdrop-blur px-3 py-1.5 rounded-full text-xs font-bold text-bio-primary">
+              $120.000/noche
+            </div>
+          </div>
+          <div class="p-5">
+            <div class="flex items-center gap-1 mb-2">
+              <span class="text-amber-500 text-sm">★★★★★</span>
+              <span class="text-xs text-bio-text-soft">4.87 (8 reseñas)</span>
+            </div>
+            <h4 class="font-heading font-bold text-lg mb-1 text-bio-primary-dark">EcoLodge Andino</h4>
+            <p class="text-sm text-bio-text-soft mb-4">Refugio de montaña · Salento</p>
+            <div class="flex items-center gap-2 text-xs text-bio-primary font-medium">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M12 2a10 10 0 0110 10M12 2a10 10 0 00-10 10"/></svg>
+              1 reserva = 1 árbol
+            </div>
+          </div>
+        </div>
+        
+        <div class="bg-white rounded-2xl overflow-hidden shadow-md border border-bio-primary/5 hover:shadow-xl transition">
+          <div class="relative h-48 bg-gradient-to-br from-amber-700 to-orange-900">
+            <div class="absolute top-3 left-3 bg-bio-primary text-white text-xs px-3 py-1.5 rounded-full font-medium flex items-center gap-1.5">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Subarriendo mensual
+            </div>
+            <div class="absolute bottom-3 right-3 bg-white/95 backdrop-blur px-3 py-1.5 rounded-full text-xs font-bold text-bio-primary">
+              $850.000/mes
+            </div>
+          </div>
+          <div class="p-5">
+            <div class="flex items-center gap-1 mb-2">
+              <span class="text-amber-500 text-sm">★★★★★</span>
+              <span class="text-xs text-bio-text-soft">5.0 (4 reseñas)</span>
+            </div>
+            <h4 class="font-heading font-bold text-lg mb-1 text-bio-primary-dark">Casa Verde Urbana</h4>
+            <p class="text-sm text-bio-text-soft mb-4">Habitación privada · Medellín</p>
+            <div class="flex items-center gap-2 text-xs text-bio-primary font-medium">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M12 2a10 10 0 0110 10M12 2a10 10 0 00-10 10"/></svg>
+              1 reserva = 1 árbol
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Mockup Email -->
+    <div>
+      <h3 class="font-heading font-bold text-2xl mb-4 text-bio-primary-dark">📧 Comunicación Transaccional</h3>
+      <div class="bg-bio-cream rounded-2xl p-6 border border-bio-primary/5">
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden max-w-2xl mx-auto">
+          <div class="bg-bio-primary px-6 py-4 flex items-center gap-3">
+            <svg width="24" height="24" viewBox="0 0 100 100">
+              <path d="M50 8 C32 8 18 22 18 40 C18 58 35 78 50 92 C65 78 82 58 82 40 C82 22 68 8 50 8 Z" fill="#FFFFFF"/>
+              <circle cx="35" cy="35" r="3" fill="#00C9A7"/>
+              <circle cx="65" cy="45" r="3" fill="#00C9A7"/>
+            </svg>
+            <span class="text-white font-heading font-bold">Biohostels</span>
+          </div>
+          <div class="p-6">
+            <h4 class="font-heading font-bold text-xl mb-3 text-bio-primary-dark">✅ Tu reserva está sincronizada y protegida</h4>
+            <p class="text-sm text-bio-text-soft mb-4">Hola viajero, tu reserva en <strong>Tropical Biohostel</strong> ha sido verificada por nuestra IA en Booking, Airbnb e iCal.</p>
+            <div class="bg-bio-cream rounded-lg p-4 mb-4 border border-bio-primary/5">
+              <div class="flex items-center gap-2 text-sm text-bio-primary">
+                <span>🌱</span>
+                <span class="font-medium">Gracias a ti, plantaremos 1 árbol con Fundación Reforesta</span>
+              </div>
+            </div>
+            <button class="bg-bio-primary text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-bio-primary-dark transition">Ver mi reserva</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Técnico Section -->
+<section id="tecnico" class="py-24 px-6 section-fade">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-16">
+      <span class="text-bio-primary font-heading font-semibold tracking-widest text-xs uppercase">Capítulo 07</span>
+      <h2 class="font-display font-bold text-4xl md:text-5xl mt-3 mb-4 text-bio-primary-dark">Lineamientos Técnicos</h2>
+      <div class="flex items-center justify-center gap-3 mb-6">
+        <div class="w-12 h-px bg-bio-primary/30"></div>
+        <div class="w-2 h-2 rounded-full bg-bio-primary"></div>
+        <div class="w-12 h-px bg-bio-primary/30"></div>
+      </div>
+    </div>
+    
+    <div class="grid lg:grid-cols-2 gap-8">
+      <!-- CSS Variables -->
+      <div class="bg-white rounded-2xl p-8 border border-bio-primary/5">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 bg-bio-primary/5 rounded-lg flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1B4D3E" stroke-width="2"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>
+          </div>
+          <h3 class="font-heading font-bold text-xl text-bio-primary-dark">Design Tokens (CSS)</h3>
+        </div>
+        <p class="text-sm text-bio-text-soft mb-4">Variables globales para Tailwind o CSS nativo:</p>
+        <div class="code-block">
+<pre><span class="comment">/* Biohostels Design Tokens */</span>
+<span class="keyword">:root</span> {
+  <span class="property">--color-bio-primary</span>: <span class="string">#1B4D3E</span>;
+  <span class="property">--color-bio-primary-dark</span>: <span class="string">#0F3328</span>;
+  <span class="property">--color-bio-accent</span>: <span class="string">#00C9A7</span>;
+  <span class="property">--color-bio-warm</span>: <span class="string">#D4A373</span>;
+  <span class="property">--color-bio-bg</span>: <span class="string">#FAFAF7</span>;
+  <span class="property">--color-bio-text</span>: <span class="string">#1A1A1A</span>;
+  
+  <span class="property">--font-heading</span>: <span class="string">'Montserrat'</span>;
+  <span class="property">--font-display</span>: <span class="string">'Playfair Display'</span>;
+  <span class="property">--font-body</span>: <span class="string">'Inter'</span>;
+}</pre>
+        </div>
+      </div>
+      
+      <!-- SVG Implementation -->
+      <div class="bg-white rounded-2xl p-8 border border-bio-primary/5">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 bg-bio-primary/5 rounded-lg flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1B4D3E" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+          </div>
+          <h3 class="font-heading font-bold text-xl text-bio-primary-dark">Implementación SVG</h3>
+        </div>
+        <p class="text-sm text-bio-text-soft mb-4">SVG inline para manipulación de color vía CSS:</p>
+        <div class="code-block">
+<pre><span class="comment">&lt;!-- Logo inline con currentColor --&gt;</span>
+&lt;<span class="keyword">svg</span> <span class="property">fill</span>=<span class="string">"currentColor"</span>&gt;
+  &lt;<span class="keyword">path</span> <span class="property">d</span>=<span class="string">"M50 8..."</span>/&gt;
+&lt;/<span class="keyword">svg</span>&gt;
+
+<span class="comment">/* Cambio de color dinámico */</span>
+.<span class="property">logo</span> { <span class="property">color</span>: <span class="string">var(--color-bio-primary)</span>; }
+.<span class="property">logo:hover</span> { <span class="property">color</span>: <span class="string">var(--color-bio-primary-dark)</span>; }</pre>
+        </div>
+      </div>
+      
+      <!-- Accesibilidad -->
+      <div class="bg-bio-primary rounded-2xl p-8 text-white relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-bio-secondary/10 rounded-full -translate-y-16 translate-x-16"></div>
+        <h3 class="font-heading font-bold text-xl mb-4 relative z-10">♿ Accesibilidad (WCAG 2.1 AA)</h3>
+        <div class="space-y-3 relative z-10">
+          <div class="flex items-center justify-between bg-white/10 p-3 rounded-lg backdrop-blur">
+            <span class="text-sm">Texto normal (16px)</span>
+            <span class="text-sm font-bold">Ratio ≥ 4.5:1 ✓</span>
+          </div>
+          <div class="flex items-center justify-between bg-white/10 p-3 rounded-lg backdrop-blur">
+            <span class="text-sm">Texto grande (18px+)</span>
+            <span class="text-sm font-bold">Ratio ≥ 3:1 ✓</span>
+          </div>
+          <div class="flex items-center justify-between bg-white/10 p-3 rounded-lg backdrop-blur">
+            <span class="text-sm">Elementos interactivos</span>
+            <span class="text-sm font-bold">Foco visible ✓</span>
+          </div>
+          <div class="flex items-center justify-between bg-white/10 p-3 rounded-lg backdrop-blur">
+            <span class="text-sm">Contraste de colores</span>
+            <span class="text-sm font-bold">Verificados ✓</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Próximos pasos -->
+      <div class="bg-bio-cream rounded-2xl p-8 border border-bio-primary/10">
+        <h3 class="font-heading font-bold text-xl mb-4 text-bio-primary-dark">🚀 Próximos Pasos</h3>
+        <div class="space-y-3">
+          <div class="flex gap-3">
+            <div class="w-6 h-6 bg-bio-primary text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
+            <p class="text-sm text-bio-text-soft"><strong>Vectorización Final:</strong> Archivos .AI / .SVG basados en este brief.</p>
+          </div>
+          <div class="flex gap-3">
+            <div class="w-6 h-6 bg-bio-primary text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
+            <p class="text-sm text-bio-text-soft"><strong>Design System:</strong> Cargar tokens en Figma / Storybook.</p>
+          </div>
+          <div class="flex gap-3">
+            <div class="w-6 h-6 bg-bio-primary text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">3</div>
+            <p class="text-sm text-bio-text-soft"><strong>Registro SIC:</strong> Marca denominativa y mixta "Biohostels".</p>
+          </div>
+          <div class="flex gap-3">
+            <div class="w-6 h-6 bg-bio-primary text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">4</div>
+            <p class="text-sm text-bio-text-soft"><strong>ISO 14001:</strong> Sistema de gestión ambiental auditable.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="bg-bio-primary-dark text-white py-16 px-6 relative overflow-hidden">
+  <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-bio-secondary/30 to-transparent"></div>
+  <div class="max-w-7xl mx-auto relative z-10">
+    <div class="grid md:grid-cols-3 gap-8 mb-10">
+      <div>
+        <div class="flex items-center gap-3 mb-4">
+          <svg width="36" height="36" viewBox="0 0 100 100">
+            <path d="M50 8 C32 8 18 22 18 40 C18 58 35 78 50 92 C65 78 82 58 82 40 C82 22 68 8 50 8 Z" fill="#FFFFFF"/>
+            <path d="M50 20 C38 20 28 30 28 42 C28 54 40 66 50 76 C60 66 72 54 72 42 C72 30 62 20 50 20 Z" fill="#1B4D3E" opacity="0.3"/>
+            <circle cx="35" cy="35" r="3" fill="#00C9A7"/>
+            <circle cx="65" cy="45" r="3" fill="#00C9A7"/>
+            <circle cx="50" cy="25" r="3" fill="#00C9A7"/>
+          </svg>
+          <span class="font-heading font-bold text-xl">Biohostels</span>
+        </div>
+        <p class="text-white/70 text-sm leading-relaxed">Tecnología que regenera. Plataforma de alojamientos sostenibles con IA.</p>
+      </div>
+      <div>
+        <h4 class="font-heading font-bold mb-3 text-bio-secondary">Desarrollado por</h4>
+        <p class="text-white/70 text-sm">Xlerion.com.co</p>
+        <p class="text-white/50 text-sm mt-1">Noviembre 2026 · v1.0</p>
+      </div>
+      <div>
+        <h4 class="font-heading font-bold mb-3 text-bio-secondary">Contacto</h4>
+        <p class="text-white/70 text-sm">equipo@biohostels.com</p>
+        <p class="text-white/50 text-sm mt-1">biohostel-com.xleriondev.workers.dev</p>
+      </div>
+    </div>
+    <div class="border-t border-white/10 pt-6 text-center text-sm text-white/50">
+      © 2026 Biohostels · Manual de Identidad Visual · Todos los derechos reservados
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Mobile menu toggle
+  const menuBtn = document.getElementById('menuBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+  menuBtn.addEventListener('click', () => {
+    mobileMenu.classList.toggle('hidden');
+  });
+  
+  // Close mobile menu on link click
+  mobileMenu.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => mobileMenu.classList.add('hidden'));
+  });
+  
+  // Tabs
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const tabContents = document.querySelectorAll('.tab-content');
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabBtns.forEach(b => b.classList.remove('active'));
+      tabContents.forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+  
+  // Copy color
+  function copyColor(hex, name) {
+    navigator.clipboard.writeText(hex).then(() => {
+      const toast = document.getElementById('toast');
+      toast.textContent = `✓ ${name} (${hex}) copiado`;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    });
+  }
+  
+  // Intersection Observer for fade-in
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+  
+  document.querySelectorAll('.section-fade').forEach(el => observer.observe(el));
+  
+  // Active nav link on scroll
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-link');
+  
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(section => {
+      const top = section.offsetTop - 100;
+      if (window.scrollY >= top) {
+        current = section.getAttribute('id');
+      }
+    });
+    navLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('href') === '#' + current) {
+        link.classList.add('active');
+      }
+    });
+  });
+</script>
+
+</body>
+</html>

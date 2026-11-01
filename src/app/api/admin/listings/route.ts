@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { store } from "@/lib/store";
 import { requireAdmin } from "@/lib/server-auth";
 import { applyListingEdit } from "@/lib/listing-edit";
+import { legalPublishIssue } from "@/lib/legal";
+import { deletePrivateFile } from "@/lib/storage";
 
 export async function GET() {
   const gate = await requireAdmin();
@@ -17,12 +19,20 @@ export async function PATCH(req: Request) {
   const l = all.find((x) => x.id === body.id);
   if (!l) return NextResponse.json({ error: "No existe." }, { status: 404 });
 
+  const previousDoc = l.subleaseAuth?.docName;
   const error = applyListingEdit(l, body, { maxFotos: 30, maxDesc: 5000 });
   if (error) return NextResponse.json({ error }, { status: 400 });
-  if (typeof body.active === "boolean") l.active = body.active;
+  if (typeof body.active === "boolean") {
+    if (body.active) {
+      const issue = legalPublishIssue(l);
+      if (issue) return NextResponse.json({ error: issue }, { status: 400 });
+    }
+    l.active = body.active;
+  }
   if (typeof body.featured === "boolean") l.featured = body.featured;
 
   await store.saveListings(all);
+  if (previousDoc && l.subleaseAuth?.docName !== previousDoc) await deletePrivateFile(previousDoc);
   const { indexListing, removeFromIndex } = await import("@/lib/rag");
   if (l.active === false) await removeFromIndex(l.id).catch(() => null);
   else await indexListing(l).catch(() => null);

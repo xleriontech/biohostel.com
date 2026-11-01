@@ -44,7 +44,7 @@ export async function POST(req: Request) {
   let html = "";
   try {
     const res = await fetch(url.trim(), {
-      headers: { "User-Agent": "BioHostelBot/1.0 (+https://biohostel.com)" },
+      headers: { "User-Agent": "BiohostelsBot/1.0 (+https://biohostels.com)" },
       signal: AbortSignal.timeout(15000),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -168,7 +168,7 @@ function extraerEstilo(html: string, textoPlano: string) {
   const font = "sans" as const;
   const vibe = VIBES.find((v) => v.kws.test(textoPlano)) ?? { preset: "selva" as const, label: "eco-natural" };
   const defaults: Record<string, [string, string]> = {
-    selva: ["#1d4a2c", "#bef264"],
+    selva: ["#14532d", "#a3e635"],
     mar: ["#0e7490", "#fef3c7"],
     colonial: ["#92400e", "#fcd34d"],
     urbano: ["#1e3a8a", "#93c5fd"],

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Listing, ListingTheme } from "@/lib/data";
 import { Icon } from "@/app/icons";
+import { LEGAL_VERSION, isValidRnt } from "@/lib/legal";
 
 type EditableListing = Listing & { active?: boolean };
 
@@ -23,6 +24,11 @@ export function ListingEditForm({ listing, endpoint, maxDesc = 5000, notify, onC
   const [precioMes, setPrecioMes] = useState(listing.precioMes ? String(listing.precioMes) : "");
   const [huespedes, setHuespedes] = useState(String(listing.huespedes));
   const [descripcion, setDescripcion] = useState(listing.descripcion);
+  const [rnt, setRnt] = useState(listing.rnt ?? "");
+  const [subleaseDeclared, setSubleaseDeclared] = useState(!!listing.subleaseAuth?.confirmed);
+  const [docFile, setDocFile] = useState<File | null>(null);
+  const [hasDoc, setHasDoc] = useState(!!listing.subleaseAuth?.docName);
+  const [docBusy, setDocBusy] = useState(false);
   const [fotos, setFotos] = useState(listing.galeria.join("\n"));
   const [amenidades, setAmenidades] = useState(listing.amenidades.join(", "));
   const [checkIn, setCheckIn] = useState(listing.checkIn);
@@ -33,16 +39,86 @@ export function ListingEditForm({ listing, endpoint, maxDesc = 5000, notify, onC
   const [cancellationPolicy, setCancellationPolicy] = useState(listing.cancellationPolicy);
   const [reglas, setReglas] = useState(listing.houseRules.join("\n"));
   const [politicas, setPoliticas] = useState(listing.politicas);
-  const [primary, setPrimary] = useState(listing.theme?.primary ?? "#1d4a2c");
-  const [accent, setAccent] = useState(listing.theme?.accent ?? "#bef264");
-  const [preset, setPreset] = useState<ListingTheme["preset"]>(listing.theme?.preset ?? "selva");
+  // Tema neutro por defecto: un micrositio sin configurar no debe parecerse a la marca de la plataforma.
+  const [primary, setPrimary] = useState(listing.theme?.primary ?? "#3f3f46");
+  const [accent, setAccent] = useState(listing.theme?.accent ?? "#e4e4e7");
+  const [preset, setPreset] = useState<ListingTheme["preset"]>(listing.theme?.preset ?? "minimal");
   const [active, setActive] = useState(listing.active !== false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  async function guardar() {
-    setSaving(true);
+  async function subirDocumento(): Promise<boolean> {
+    if (!docFile) return true;
+    setDocBusy(true);
     setError("");
+    try {
+      const form = new FormData();
+      form.append("listingId", listing.id);
+      form.append("file", docFile);
+      const res = await fetch("/api/listings/sublease-doc", { method: "POST", body: form });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error ?? "No se pudo subir la autorización.");
+        return false;
+      }
+      setHasDoc(true);
+      setDocFile(null);
+      return true;
+    } catch {
+      setError("Error de conexión al subir la autorización.");
+      return false;
+    } finally {
+      setDocBusy(false);
+    }
+  }
+
+  async function quitarDocumento() {
+    if (!confirm("¿Quitar la autorización de subarriendo? La publicación se pausará.")) return;
+    setDocBusy(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/listings/sublease-doc?id=${encodeURIComponent(listing.id)}`, { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error ?? "No se pudo quitar el documento.");
+        return;
+      }
+      setHasDoc(false);
+      setSubleaseDeclared(false);
+      notify("Autorización eliminada. La publicación fue pausada.");
+      onSaved();
+    } catch {
+      setError("Error de conexión.");
+    } finally {
+      setDocBusy(false);
+    }
+  }
+
+  async function guardar() {
+    setError("");
+    const mustComply = listing.legalVersion === LEGAL_VERSION;
+    if (active && mustComply) {
+      if (!isValidRnt(rnt)) {
+        setError("El RNT es obligatorio para publicar. Escribe solo los dígitos del Registro Nacional de Turismo.");
+        return;
+      }
+      if (tipo === "subarriendo" && !subleaseDeclared) {
+        setError("Declara que cuentas con autorización escrita del propietario para subarrendar.");
+        return;
+      }
+      if (tipo === "subarriendo" && !hasDoc && !docFile) {
+        setError("Adjunta el documento de autorización del propietario antes de publicar.");
+        return;
+      }
+    }
+    setSaving(true);
+    if (tipo === "subarriendo" && docFile) {
+      const uploaded = await subirDocumento();
+      if (!uploaded) {
+        setSaving(false);
+        return;
+      }
+    }
     const payload = {
       id: listing.id,
       titulo,
@@ -54,6 +130,8 @@ export function ListingEditForm({ listing, endpoint, maxDesc = 5000, notify, onC
       precioMes: precioMes ? Number(precioMes) : undefined,
       huespedes: Number(huespedes) || 1,
       descripcion,
+      rnt,
+      subleaseDeclared,
       imagenes: fotos.split("\n").map((s) => s.trim()).filter(Boolean),
       amenidades: amenidades.split(",").map((s) => s.trim()).filter(Boolean),
       checkIn,
@@ -99,6 +177,17 @@ export function ListingEditForm({ listing, endpoint, maxDesc = 5000, notify, onC
 
           <div className="field"><label>Título</label><input value={titulo} maxLength={140} onChange={(e) => setTitulo(e.target.value)} /></div>
 
+          <div className="field">
+            <label>RNT · Registro Nacional de Turismo</label>
+            <input inputMode="numeric" value={rnt} maxLength={20} placeholder="Solo dígitos" onChange={(e) => setRnt(e.target.value)} />
+            <p className="muted" style={{ fontSize: 12, margin: "4px 0 0" }}>Obligatorio para publicar (Decreto 1836 de 2021).</p>
+            {listing.legalVersion !== LEGAL_VERSION && !rnt && (
+              <div className="aibox warn" style={{ marginTop: 8 }}>
+                Publicación heredada sin RNT. Complétalo para que aparezca en el micrositio.
+              </div>
+            )}
+          </div>
+
           <div className="row" style={{ alignItems: "flex-start" }}>
             <div className="field" style={{ flex: "1 1 200px" }}><label>Ciudad</label><input value={ciudad} maxLength={100} onChange={(e) => setCiudad(e.target.value)} /></div>
             <div className="field" style={{ flex: "2 1 280px" }}><label>Dirección</label><input value={direccion} maxLength={200} onChange={(e) => setDireccion(e.target.value)} /></div>
@@ -109,6 +198,33 @@ export function ListingEditForm({ listing, endpoint, maxDesc = 5000, notify, onC
             <div className="field" style={{ flex: "1 1 150px" }}><label>Categoría</label><input value={categoria} maxLength={40} disabled={tipo === "subarriendo"} onChange={(e) => setCategoria(e.target.value)} /></div>
             <div className="field" style={{ flex: "0 1 120px" }}><label>Huéspedes</label><input type="number" min={1} max={50} value={huespedes} onChange={(e) => setHuespedes(e.target.value)} /></div>
           </div>
+
+          {tipo === "subarriendo" && (
+            <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 12, padding: 14, marginBottom: 12 }}>
+              <p className="eyebrow" style={{ marginTop: 0 }}>AUTORIZACIÓN DE SUBARRIENDO · LEY 820 DE 2003</p>
+              <label className="row" style={{ gap: 8, fontSize: 13, fontWeight: 600 }}>
+                <input type="checkbox" checked={subleaseDeclared} onChange={(e) => setSubleaseDeclared(e.target.checked)} />
+                Declaro que cuento con autorización escrita del propietario para subarrendar este inmueble.
+              </label>
+              <div className="field" style={{ marginTop: 10 }}>
+                <label>Documento de autorización (PDF, JPG, PNG o WEBP · máx. 8 MB)</label>
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" disabled={docBusy} onChange={(e) => setDocFile(e.target.files?.[0] ?? null)} />
+                {hasDoc && (
+                  <p className="muted" style={{ fontSize: 12, margin: "6px 0 0" }}>
+                    Documento cargado.{" "}
+                    <a href={`/api/listings/sublease-doc?id=${encodeURIComponent(listing.id)}`} target="_blank" rel="noreferrer" style={{ textDecoration: "underline" }}>
+                      Ver autorización
+                    </a>
+                    {" · "}
+                    <button type="button" className="btn btn-ghost" disabled={docBusy} onClick={quitarDocumento}>Quitar</button>
+                  </p>
+                )}
+                <p className="muted" style={{ fontSize: 12, margin: "6px 0 0" }}>
+                  Se guarda de forma privada: solo tú y el administrador pueden abrirlo.
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="row" style={{ alignItems: "flex-start" }}>
             <div className="field" style={{ flex: "1 1 160px" }}><label>Precio / noche (COP)</label><input type="number" min={0} value={precioNoche} onChange={(e) => setPrecioNoche(e.target.value)} /></div>
